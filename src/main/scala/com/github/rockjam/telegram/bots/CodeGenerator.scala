@@ -17,14 +17,17 @@
 package com.github.rockjam.telegram.bots
 
 import scala.collection.immutable.Seq
+import scala.meta.Defn.Trait
 import scala.meta.Term.Param
 import scala.meta._
 
 object CodeGenerator {
 
   def generate(schema: Schema): Unit = {
+    //=== predefined -> package object
     println(predefined)
 
+    //=== traits, structures and base -> structures.scala
     val traitTrees = schema.bases map structureBaseToCaseClass
     println("========================== Traits")
     traitTrees foreach println
@@ -33,7 +36,11 @@ object CodeGenerator {
     // write those to file. possibly grouped by updates/messages/other shit
     println("========================== Structures")
     structureTrees foreach println
+    //===
 
+    //=== methods and botApiRequest trait -> methods.scala
+    println("========================== BotApiRequest")
+    println(BotApiRequest)
     val methodTrees = schema.methods map methodToCaseClass
     println("========================== Methods")
     methodTrees foreach println
@@ -66,10 +73,11 @@ object CodeGenerator {
     q"final case class $methodName ( ..$params ) extends BotApiRequest[$returnType]"
   }
 
+  private val BotApiRequest: Trait = q"sealed trait BotApiRequest[Resp]"
+
   private def predefined: Seq[Tree] =
-//    val alias = "type alias ChatId = Either[Long, String]"
     Seq(
-      q"sealed trait BotApiRequest[Resp]"
+      q"type ChatId = Either[Long, String]"
     )
 
   // to case class fields
@@ -81,9 +89,10 @@ object CodeGenerator {
   }
 
   private def toScalaType(parsedType: ParsedType): Type = {
-//    val typeAlias: PartialFunction[ParsedType, Type] = {
-//      case OrType(LiteralType("Integer" | "Int"), LiteralType("String")) => t"ChatId"
-//    }
+    def alias(pt: ParsedType): Option[Type] = pt match {
+      case OrType(LiteralType("Integer" | "Int"), LiteralType("String")) ⇒ Some(t"ChatId")
+      case _                                                             ⇒ None
+    }
 
     val literalType: PartialFunction[String, Type] = {
       case "Integer" | "Int"  ⇒ t"Long"
@@ -92,22 +101,25 @@ object CodeGenerator {
       case "Float"            ⇒ t"Float"
     }
 
-    parsedType match {
-      case LiteralType(name) ⇒ literalType(name)
-      case StructType(name) ⇒
-        val typ = Type.Name(name)
-        t"$typ"
-      case OptionType(tp) ⇒
-        val scalaTp = toScalaType(tp)
-        t"Option[$scalaTp]"
-      case ListType(tp) ⇒
-        val scalaTp = toScalaType(tp)
-        t"Seq[$scalaTp]"
-      case OrType(a, b) ⇒
-        val aType = toScalaType(a)
-        val bType = toScalaType(b)
-        t"Either[$aType, $bType]"
+    alias(parsedType) getOrElse {
+      parsedType match {
+        case LiteralType(name) ⇒ literalType(name)
+        case StructType(name) ⇒
+          val typ = Type.Name(name)
+          t"$typ"
+        case OptionType(tp) ⇒
+          val scalaTp = toScalaType(tp)
+          t"Option[$scalaTp]"
+        case ListType(tp) ⇒
+          val scalaTp = toScalaType(tp)
+          t"Seq[$scalaTp]"
+        case OrType(a, b) ⇒
+          val aType = toScalaType(a)
+          val bType = toScalaType(b)
+          t"Either[$aType, $bType]"
+      }
     }
+
   }
 
 }
