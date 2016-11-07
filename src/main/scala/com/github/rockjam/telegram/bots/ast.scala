@@ -16,6 +16,8 @@
 
 package com.github.rockjam.telegram.bots
 
+import scala.collection.immutable.Seq
+
 sealed trait ParsedType
 case class LiteralType(name: String)            extends ParsedType // Integer, String, Boolean and other True-s
 case class StructType(name: String)             extends ParsedType // Structures defined by Telegram API
@@ -38,10 +40,8 @@ case class OrType(a: ParsedType, b: ParsedType) extends ParsedType // a or b
 //sealed trait AST
 
 case class Field(name: String, typ: ParsedType, description: String)
-case class Structure(name: String, fields: scala.collection.immutable.Seq[Field]) // TODO: possibly add description
-case class Method(name: String,
-                  returnTyp: ParsedType,
-                  fields: scala.collection.immutable.Seq[Field])
+case class Structure(name: String, fields: Seq[Field])                     // TODO: possibly add description
+case class Method(name: String, returnTyp: ParsedType, fields: Seq[Field]) // TODO: possibly add description
 
 // should be BaseType too
 // maybe enumeration too

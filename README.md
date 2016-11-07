@@ -3,11 +3,12 @@
 Welcome to telegram-bots!
 
 ## Todos
-* Extract return type for methods
-* Extract "must be" stuff
-* InlineQueryResult/InputMessageContent are sealed traits and concrete case classes extends it
-* Write requests and data structures to separate files, with possibility to specify package name.
-* Make it sbt plugin
+- [X] Extract return type for methods
+- [ ] InlineQueryResult/InputMessageContent are sealed traits and concrete case classes extends it
+- [ ] Extract "must be" stuff
+- [ ] Type alias `type ChatId = Either[Long, String]`
+- [ ] Write requests and data structures to separate files, with possibility to specify package name.
+- [ ] Make it sbt plugin
 
 ## Contribution policy
 

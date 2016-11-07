@@ -38,7 +38,7 @@ object SchemaParser {
       case (name, elements) ⇒
         Structure(
           name,
-          fields = extractStructFields(name, elements, structNames)
+          fields = extractStructFields(elements, structNames)
         )
     }
 
@@ -46,8 +46,8 @@ object SchemaParser {
       case (name, elements) ⇒
         Method(
           name,
-          returnTyp = extractMethodReturnType(elements),
-          fields = extractMethodFields(name, elements, structNames)
+          returnTyp = extractMethodResponseType(name, elements, structNames),
+          fields = extractMethodFields(elements, structNames)
         )
 
     }
@@ -90,7 +90,7 @@ object SchemaParser {
         el.tagName match {
           // it's better to filter out keys later
           case "h4" ⇒
-            acc :+ el.text → Vector.empty[Element]
+            acc :+ (el.text → Vector.empty[Element])
           case other ⇒
             acc match {
               case Vector() ⇒
@@ -106,7 +106,6 @@ object SchemaParser {
   // TODO: DRY
   //TODO: reduce number of conversions
   private def extractStructFields(
-      name: String,
       elems: Seq[Element],
       structNames: Seq[String]): scala.collection.immutable.Seq[Field] = {
     val es = new Elements(elems.asJava)
@@ -140,7 +139,6 @@ object SchemaParser {
   // TODO: DRY
   //TODO: reduce number of conversions
   private def extractMethodFields(
-      name: String,
       elems: Seq[Element],
       structNames: Seq[String]): scala.collection.immutable.Seq[Field] = {
     val es = new Elements(elems.asJava)
@@ -180,37 +178,66 @@ object SchemaParser {
   //Returns Int on success.
   //Returns a ChatMember object on success.
   //On success, True is returned.
-  private def extractMethodReturnType(elems: Seq[Element]): ParsedType =
-    LiteralType("String")
+  //  An Array of <a href="#update">Update</a> objects is returned.
+  //On success, if edited message is sent by the bot, the edited <a href="#message">Message</a> is returned, otherwise <em>True</em> is returned
 
-//    val returnType = otherNodes // other nodes are not table
-//      .mkString(" ")
-//      .split("\\.")
-//      .toSeq
-//      .filter(_.toLowerCase.contains("return"))
-//      .map { result ⇒
-//        val types = TypeExtractorPattern.findAllMatchIn(result).map {
-//          _.group(0).replaceAll(HtmlTagPattern, "$1").trim
-//        }
-//        if (types.nonEmpty)
-//          Some(types.mkString(" or "))
-//        else
-//          None
-//      }
-//      .find(_.nonEmpty)
-//      .flatten
-//      .getOrElse("True")
+  private def extractMethodResponseType(name: String,
+                                        elems: Seq[Element],
+                                        structNames: Seq[String]): ParsedType = {
+    val DefaultType = LiteralType("True")
+
+    val paragraphs = new Elements(elems.asJava).select("p").asScala
+
+    // find sentence with "return" word among paragraphs we have.
+    val sentences = paragraphs flatMap { p ⇒
+      p.html.split("\\. ") // split on sentences
+    } filter { s ⇒
+      s.toLowerCase.contains("return") // find one with "return" word in it.
+    }
+
+    // if we didn't find exact and only 1 sentence, narrow search to sentences containing "on success"
+    val optSentence = if (sentences.length > 1) {
+      sentences.find(_.toLowerCase.contains("on success"))
+    } else {
+      sentences.headOption
+    }
+
+    optSentence map { s ⇒
+      val doc = Jsoup.parseBodyFragment(s)
+
+      // struct type have higher precedence.
+      val literalType =
+        doc.body.select("em").asScala.map(_.text).headOption.map(LiteralType.apply)
+      val structType =
+        doc.body.select("a").asScala.map(_.text).find(structNames.contains).map(StructType.apply)
+
+      val isArrayType = s.contains("Array of")
+      val isOrType    = s.contains("otherwise")
+
+      if (isOrType) {
+        OrType(structType.get, literalType.get)
+      } else {
+        val singleType: ParsedType =
+          structType.orElse(literalType).getOrElse(sys.error(s"Unable to parse type from: ${s}"))
+
+        if (isArrayType) ListType(singleType)
+        else singleType
+      }
+    } getOrElse DefaultType
+  }
 
   /**
-    * extract type from string like:
+    * Extracts type from raw type like:
     * Integer
     * String
     * Integer or String
     * Boolean
     * InlineKeyboardMarkup or ReplyKeyboardMarkup or ReplyKeyboardHide or ForceReply
+    * Float
     * Float number
     * InlineKeyboardMarkup
     * Array of InlineQueryResult
+    * Array of Array of PhotoSize
     *
     * @param rawType
     * @param isOptional
