@@ -19,12 +19,16 @@ package com.github.rockjam.telegram.bots
 import scala.collection.immutable.Seq
 import scala.meta.Term.Param
 import scala.meta._
-import scala.meta.tokens.Token.Comment
 
 object CodeGenerator {
 
   def generate(schema: Schema): Unit = {
     println(predefined)
+
+    val traitTrees = schema.bases map structureBaseToCaseClass
+    println("========================== Traits")
+    traitTrees foreach println
+
     val structureTrees = schema.structs map structureToCaseClass
     // write those to file. possibly grouped by updates/messages/other shit
     println("========================== Structures")
@@ -35,10 +39,23 @@ object CodeGenerator {
     methodTrees foreach println
   }
 
+  private def structureBaseToCaseClass(structureBase: StructureBase): Defn.Trait = {
+    val traitName = Type.Name(structureBase.name)
+    q"sealed trait $traitName"
+  }
+
   private def structureToCaseClass(structure: Structure): Defn.Class = {
+    val templopt = structure.baseType map { t ⇒
+      val name = Ctor.Name(t)
+      template"$name"
+    }
     val structName              = Type.Name(structure.name)
     val params: Seq[Term.Param] = toParams(structure.fields)
-    q"final case class $structName ( ..$params )"
+
+    templopt match {
+      case Some(templ) ⇒ q"final case class $structName ( ..$params ) extends $templ"
+      case None        ⇒ q"final case class $structName ( ..$params )"
+    }
   }
 
   private def methodToCaseClass(method: Method): Defn.Class = {
@@ -50,7 +67,10 @@ object CodeGenerator {
   }
 
   private def predefined: Seq[Tree] =
-    Seq(q"sealed trait BotApiRequest[Resp]")
+//    val alias = "type alias ChatId = Either[Long, String]"
+    Seq(
+      q"sealed trait BotApiRequest[Resp]"
+    )
 
   // to case class fields
   private def toParams(fields: Seq[Field]): Seq[Param] = fields map {
@@ -61,8 +81,12 @@ object CodeGenerator {
   }
 
   private def toScalaType(parsedType: ParsedType): Type = {
-    def literalType: PartialFunction[String, Type] = {
-      case "Integer"          ⇒ t"Long"
+//    val typeAlias: PartialFunction[ParsedType, Type] = {
+//      case OrType(LiteralType("Integer" | "Int"), LiteralType("String")) => t"ChatId"
+//    }
+
+    val literalType: PartialFunction[String, Type] = {
+      case "Integer" | "Int"  ⇒ t"Long"
       case "Boolean" | "True" ⇒ t"Boolean"
       case "String"           ⇒ t"String"
       case "Float"            ⇒ t"Float"
@@ -70,8 +94,7 @@ object CodeGenerator {
 
     parsedType match {
       case LiteralType(name) ⇒ literalType(name)
-      case StructType(name)  ⇒
-        // make it fully qualified class name
+      case StructType(name) ⇒
         val typ = Type.Name(name)
         t"$typ"
       case OptionType(tp) ⇒

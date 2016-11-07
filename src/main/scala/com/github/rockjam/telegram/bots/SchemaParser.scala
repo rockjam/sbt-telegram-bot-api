@@ -28,18 +28,57 @@ object SchemaParser {
   def parse(url: String): Schema = {
     val doc = Jsoup.connect(url).get
 
-    // should also extract base types here
-    val (structureDocs, methodDocs) =
-      structuresAndMethods(doc).partition(e ⇒ isStructure(e._1))
+    val (structureDocs, methodDocs, baseTypeDocs) = {
+      val zero = {
+        val ev = Vector.empty[(String, Vector[Element])]
+        (ev, ev, ev)
+      }
 
-    val structNames = structureDocs map (_._1)
+      (structuresAndMethods(doc) foldLeft zero) {
+        case ((structs, meths, baseTypes), el @ (name, dom)) ⇒
+          if (isMethod(name)) {
+            (
+              structs,
+              meths :+ el,
+              baseTypes
+            )
+          } else {
+            if (isBaseType(dom))
+              (
+                structs,
+                meths,
+                baseTypes :+ el
+              )
+            else
+              (
+                structs :+ el,
+                meths,
+                baseTypes
+              )
+          }
+      }
+    }
 
-    val structures = structureDocs filter (_._1 != "InputFile") map {
-      case (name, elements) ⇒
-        Structure(
-          name,
-          fields = extractStructFields(elements, structNames)
-        )
+    val baseTypeNames = baseTypeDocs.map(_._1)
+
+    val structNames = structureDocs.map(_._1) ++ baseTypeNames
+
+    val structures = {
+      // Map from concrete type to base type
+      val baseTypeReverseIndex: Map[String, String] =
+        (baseTypeDocs flatMap {
+          case (name, elements) ⇒
+            extractBaseTypeChildren(elements) map (_ → name)
+        }).toMap
+
+      structureDocs filter (_._1 != "InputFile") map {
+        case (name, elements) ⇒
+          Structure(
+            name,
+            fields = extractStructFields(elements, structNames),
+            baseType = baseTypeReverseIndex.get(name)
+          )
+      }
     }
 
     val methods = methodDocs map {
@@ -51,6 +90,8 @@ object SchemaParser {
         )
 
     }
+
+    val structureBases = baseTypeNames map StructureBase.apply
 
     println(s"===Structures:")
     structures foreach { s ⇒
@@ -65,18 +106,29 @@ object SchemaParser {
       m.fields foreach println
     }
 
-    Schema(structures, methods)
+    Schema(structures, structureBases, methods)
   }
 
   /**
-    * Assuming that structure name starts with Upper case
-    * isStructure("Update") -> true
-    * isStructure("getMe") -> false
+    * Assuming that method name starts with lower case letter
+    * isMethod("Update") -> false
+    * isMethod("getMe") -> true
     *
     * @param s
     * @return
     */
-  private def isStructure(s: String) = s(0).isUpper
+  private def isMethod(s: String) = s(0).isLower
+
+  private def isBaseType(es: Seq[Element]) = {
+    val linksInsideLi = baseTypeStructLinks(es)
+    linksInsideLi.nonEmpty && linksInsideLi.forall(e ⇒ !e.text.contains(" ")) // TODO: is there single method for this?
+  }
+
+  private def extractBaseTypeChildren(es: Seq[Element]) =
+    baseTypeStructLinks(es) map (_.text)
+
+  private def baseTypeStructLinks(es: Seq[Element]): Seq[Element] =
+    new Elements(es.asJava).select("ul li a").asScala
 
   // returns structures and methods
   // h4 -> Seq(p, tr, p)

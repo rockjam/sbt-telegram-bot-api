@@ -19,31 +19,20 @@ package com.github.rockjam.telegram.bots
 import scala.collection.immutable.Seq
 
 sealed trait ParsedType
-case class LiteralType(name: String)            extends ParsedType // Integer, String, Boolean and other True-s
-case class StructType(name: String)             extends ParsedType // Structures defined by Telegram API
-case class OptionType(tp: ParsedType)           extends ParsedType // Option parametrised with type parameter tp.
-case class ListType(tp: ParsedType)             extends ParsedType // List parametrised with type parameter tp.
-case class OrType(a: ParsedType, b: ParsedType) extends ParsedType // a or b
-
-//case class TraitType(baseName: String) extends Type
-
-//  Message - trait type
-//  {
-//    "type": {
-//      "type": "trait",
-//      "childType": "Message"
-//    },
-//    "id": 4,
-//    "name": "message"
-//  },
+final case class LiteralType(name: String)            extends ParsedType // Integer, String, Boolean and other True-s
+final case class StructType(name: String)             extends ParsedType // Structures defined by Telegram API
+final case class OptionType(tp: ParsedType)           extends ParsedType // Option parametrised with type parameter tp.
+final case class ListType(tp: ParsedType)             extends ParsedType // List parametrised with type parameter tp.
+final case class OrType(a: ParsedType, b: ParsedType) extends ParsedType // a or b
 
 //sealed trait AST
 
-case class Field(name: String, typ: ParsedType, description: String)
-case class Structure(name: String, fields: Seq[Field])                     // TODO: possibly add description
-case class Method(name: String, returnTyp: ParsedType, fields: Seq[Field]) // TODO: possibly add description
+final case class Field(name: String, typ: ParsedType, description: String)
+final case class Structure(name: String, fields: Seq[Field], baseType: Option[String]) // TODO: possibly add description // TODO: baseType: is it String or StructureBase?
+final case class StructureBase(name: String)
+final case class Method(name: String, returnTyp: ParsedType, fields: Seq[Field]) // TODO: possibly add description
 
 // should be BaseType too
 // maybe enumeration too
 
-case class Schema(structs: Seq[Structure], methods: Seq[Method])
+final case class Schema(structs: Seq[Structure], bases: Seq[StructureBase], methods: Seq[Method])

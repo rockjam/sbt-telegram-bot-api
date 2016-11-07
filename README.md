@@ -4,7 +4,7 @@ Welcome to telegram-bots!
 
 ## Todos
 - [X] Extract return type for methods
-- [ ] InlineQueryResult/InputMessageContent are sealed traits and concrete case classes extends it
+- [X] InlineQueryResult/InputMessageContent are sealed traits and concrete case classes extends it
 - [ ] Extract "must be" stuff
 - [ ] Type alias `type ChatId = Either[Long, String]`
 - [ ] Write requests and data structures to separate files, with possibility to specify package name.
