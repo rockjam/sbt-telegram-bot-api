@@ -18,7 +18,7 @@ package com.github.rockjam.telegram.bots
 
 import java.util.Locale._
 
-// taken from json4s sources
+// Taken from https://github.com/json4s/json4s project: org.json4s.MonadicJValue
 object StringUtils {
 
   def camelize(word: String): String = {

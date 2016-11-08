@@ -16,8 +16,26 @@
 
 package com.github.rockjam.telegram.bots
 
+import java.nio.file.StandardOpenOption.{ CREATE, TRUNCATE_EXISTING }
+import java.nio.file.{ Files, Paths }
+
+import scala.collection.immutable.Seq
+
 object Main extends App {
   val schemaUrl      = "https://core.telegram.org/bots/api"
   val schema: Schema = HTMLSchemaParser.parse(schemaUrl)
-  CodeGenerator.generate(schema)
+  val trees: Map[String, Seq[String]] =
+    CodeGenerator.generate("com.github.rockjam.telegram.bots.models", schema)
+
+  val basePath = Paths.get("src/main/scala/com/github/rockjam/telegram/bots/models")
+  Files.createDirectories(basePath)
+  trees foreach {
+    case (k, defns) ⇒
+      Files.write(
+        basePath.resolve(k),
+        defns.mkString("", "\n", "\n").getBytes,
+        CREATE,
+        TRUNCATE_EXISTING
+      )
+  }
 }

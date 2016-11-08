@@ -95,7 +95,7 @@ object HTMLSchemaParser {
       case (name, elements) ⇒
         Method(
           name,
-          returnTyp = extractMethodResponseType(elements, structNames),
+          responseType = extractMethodResponseType(elements, structNames),
           fields = extractMethodFields(elements, structNames)
         )
     }

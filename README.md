@@ -7,8 +7,11 @@ Welcome to telegram-bots!
 - [X] InlineQueryResult/InputMessageContent are sealed traits and concrete case classes extends it
 - [ ] Extract "must be" and "can be", and such
 - [X] Type alias `type ChatId = Either[Long, String]`
-- [ ] InputFile write
-- [ ] Write requests and data structures to separate files, with possibility to specify package name.
+- [ ] Derive trait from OrType with more than 2 cases
+- [ ] 
+- [X] InputFile write
+- [ ] Add proper logging
+- [X] Write requests and data structures to separate files, with possibility to specify package name.
 - [ ] Make it sbt plugin
 
 ## Contribution policy

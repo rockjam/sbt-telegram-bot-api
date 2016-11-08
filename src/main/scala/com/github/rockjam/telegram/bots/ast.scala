@@ -65,8 +65,8 @@ final case class OrType(a: ParsedType, b: ParsedType) extends ParsedType
 final case class Field(name: String, typ: ParsedType, description: String)
 final case class Structure(name: String, fields: Seq[Field], baseType: Option[BaseType]) // TODO: possibly add description // TODO: baseType: is it String or StructureBase?
 final case class BaseType(name: String)
-final case class Method(name: String, returnTyp: ParsedType, fields: Seq[Field]) // TODO: possibly add description
+final case class Method(name: String, responseType: ParsedType, fields: Seq[Field]) // TODO: possibly add description
 
 // maybe enumeration too
 
-final case class Schema(structs: Seq[Structure], bases: Seq[BaseType], methods: Seq[Method])
+final case class Schema(structs: Seq[Structure], baseTypes: Seq[BaseType], methods: Seq[Method])
