@@ -44,6 +44,7 @@ object HTMLSchemaParser {
         (ev, ev, ev)
       }
 
+      // split entities into structures, methods and types
       (extractEntities(doc) foldLeft zero) {
         case ((structs, meths, types), el @ (name, dom)) ⇒
           if (isMethod(name)) {
@@ -69,26 +70,25 @@ object HTMLSchemaParser {
       }
     }
 
-    val typeNames = typesDOM.map(_._1)
+    val structNames = structuresDOM.map(_._1) ++ typesDOM.map(_._1)
 
-    val structNames = structuresDOM.map(_._1) ++ typeNames
-
-    val structures = {
-      // Map from concrete type to base type
-      val baseTypeReverseIndex: Map[String, String] =
-        (typesDOM flatMap {
-          case (name, elements) ⇒
-            extractTypeChildren(elements) map (_ → name)
-        }).toMap
-
-      structuresDOM filter (_._1 != "InputFile") map {
+    val (baseTypes, typeReverseMap) = {
+      val (bts, revTypes) = (typesDOM map {
         case (name, elements) ⇒
-          Structure(
-            name,
-            fields = extractStructFields(elements, structNames),
-            baseType = baseTypeReverseIndex.get(name)
-          )
-      }
+          val bt = BaseType(name)
+          bt → (extractTypeChildren(elements) map (_ → bt))
+      }).unzip
+      bts → revTypes.flatten.toMap
+    }
+
+    // InputFile is defined separately.
+    val structures = structuresDOM filter (_._1 != "InputFile") map {
+      case (name, elements) ⇒
+        Structure(
+          name,
+          fields = extractStructFields(elements, structNames),
+          baseType = typeReverseMap.get(name)
+        )
     }
 
     val methods = methodDOM map {
@@ -100,22 +100,24 @@ object HTMLSchemaParser {
         )
     }
 
-    val baseTypes = typeNames map BaseType.apply
+//    println(s"===Structures:")
+//    structures foreach { s ⇒
+//      println(s"====>> ${s.name}")
+//      s.fields foreach println
+//    }
+//
+//    println(s"===Methods:")
+//    methods foreach { m ⇒
+//      println(s"====>> ${m.name}")
+//      println(s"====>> ${m.returnTyp}")
+//      m.fields foreach println
+//    }
 
-    println(s"===Structures:")
-    structures foreach { s ⇒
-      println(s"====>> ${s.name}")
-      s.fields foreach println
-    }
-
-    println(s"===Methods:")
-    methods foreach { m ⇒
-      println(s"====>> ${m.name}")
-      println(s"====>> ${m.returnTyp}")
-      m.fields foreach println
-    }
-
-    Schema(structures, baseTypes, methods)
+    Schema(
+      structures,
+      baseTypes,
+      methods
+    )
   }
 
   /**

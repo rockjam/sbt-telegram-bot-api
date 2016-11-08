@@ -63,7 +63,7 @@ final case class OrType(a: ParsedType, b: ParsedType) extends ParsedType
 //sealed trait AST
 
 final case class Field(name: String, typ: ParsedType, description: String)
-final case class Structure(name: String, fields: Seq[Field], baseType: Option[String]) // TODO: possibly add description // TODO: baseType: is it String or StructureBase?
+final case class Structure(name: String, fields: Seq[Field], baseType: Option[BaseType]) // TODO: possibly add description // TODO: baseType: is it String or StructureBase?
 final case class BaseType(name: String)
 final case class Method(name: String, returnTyp: ParsedType, fields: Seq[Field]) // TODO: possibly add description
 

@@ -25,6 +25,7 @@ object CodeGenerator {
 
   def generate(schema: Schema): Unit = {
     //=== predefined -> package object
+    // make predefined a package
     println(predefined)
 
     //=== traits, structures and base -> structures.scala
@@ -53,7 +54,7 @@ object CodeGenerator {
 
   private def structureToCaseClass(structure: Structure): Defn.Class = {
     val templopt = structure.baseType map { t ⇒
-      val name = Ctor.Name(t)
+      val name = Ctor.Name(t.name)
       template"$name"
     }
     val structName              = Type.Name(structure.name)
