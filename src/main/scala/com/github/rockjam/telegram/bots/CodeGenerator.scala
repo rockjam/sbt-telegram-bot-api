@@ -46,7 +46,7 @@ object CodeGenerator {
     methodTrees foreach println
   }
 
-  private def structureBaseToCaseClass(structureBase: StructureBase): Defn.Trait = {
+  private def structureBaseToCaseClass(structureBase: BaseType): Defn.Trait = {
     val traitName = Type.Name(structureBase.name)
     q"sealed trait $traitName"
   }

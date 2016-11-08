@@ -18,6 +18,6 @@ package com.github.rockjam.telegram.bots
 
 object Main extends App {
   val schemaUrl      = "https://core.telegram.org/bots/api"
-  val schema: Schema = SchemaParser.parse(schemaUrl)
+  val schema: Schema = HTMLSchemaParser.parse(schemaUrl)
   CodeGenerator.generate(schema)
 }
