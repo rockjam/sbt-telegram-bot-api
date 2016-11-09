@@ -100,23 +100,83 @@ object HTMLSchemaParser {
         )
     }
 
-//    println(s"===Structures:")
-//    structures foreach { s ⇒
-//      println(s"====>> ${s.name}")
-//      s.fields foreach println
-//    }
-//
-//    println(s"===Methods:")
-//    methods foreach { m ⇒
-//      println(s"====>> ${m.name}")
-//      println(s"====>> ${m.returnTyp}")
-//      m.fields foreach println
-//    }
+    val (structNamesToBase, fieldReplacements, derivedTypes) = deriveTypesFromDeeplyNestedOrs(
+      allFields = structures.flatMap(_.fields) ++ methods.flatMap(_.fields)
+    )
+
+    val updatedBaseTypes = baseTypes ++ derivedTypes
+
+    val updatedStructures = structures map { struct ⇒
+      structNamesToBase
+        .get(struct.name)
+        .fold(struct)(base ⇒ struct.copy(baseType = Some(base)))
+        .copy(fields = struct.fields map { f ⇒ // be careful here, if you change fields in prev line, changes will be lost
+          fieldReplacements.get(f.typ).fold(f)(replacement ⇒ f.copy(typ = replacement))
+        })
+    }
+
+    val updatedMethods = methods map { meth ⇒
+      meth.copy(fields = meth.fields.map { f ⇒
+        fieldReplacements.get(f.typ).fold(f)(replacement ⇒ f.copy(typ = replacement))
+      })
+    }
 
     Schema(
-      structures,
-      baseTypes,
-      methods
+      updatedStructures,
+      updatedBaseTypes,
+      updatedMethods
+    )
+  }
+
+  /**
+    * Derive base type from widely used deeply nested `OrType`-s.
+    * Deeply nested `OrType` is type with 3 or more nested levels.
+    * Widely used types are types that used more than 3 times.
+    *
+    * We find possible type name for replacement,
+    * and return mappings containing information on how to replace this types.
+    *
+    * We provide base type info for children of this type (struct types nested in or) (_1)
+    * We provide field replacement information (_2)
+    * We provide derived base types, that must be added to existing base types (_3)
+    *
+    * @param allFields fields of all methods and all structures
+    * @return
+    *         _1: Map from structure name to base type it will extend
+    *         _2: Map from type that will be replaced to replacement type
+    *         _3: Sequence of derived base types
+    */
+  private def deriveTypesFromDeeplyNestedOrs(allFields: Seq[Field])
+    : (Map[String, BaseType], Map[ParsedType, ParsedType], Seq[BaseType]) = {
+    val i = (allFields.groupBy(_.typ).toSeq collect {
+      case (typ, fields) if orTypeDepth(typ) >= 3 && fields.length > 3 ⇒
+        val isOptional = typ match {
+          case _: OptionType ⇒ true
+          case _             ⇒ false
+        }
+        val isList = typ match {
+          case _: ListType ⇒ true
+          case _           ⇒ false
+        }
+        val name = fields
+          .map(_.name)
+          .distinct
+          .headOption
+          .map(n ⇒ StringUtils.camelize(n).capitalize)
+          .getOrElse(sys.error("Failed to get common name for derived type"))
+        val structNames = extractStructNames(typ)
+        val replacementType =
+          if (isOptional) OptionType(StructType(name))
+          else if (isList) ListType(StructType(name))
+          else StructType(name)
+
+        (structNames → BaseType(name), typ → replacementType, BaseType(name))
+    }).unzip3
+
+    (
+      i._1.flatMap(e ⇒ e._1 map (_ → e._2)).toMap,
+      i._2.toMap,
+      i._3
     )
   }
 
@@ -352,6 +412,27 @@ object HTMLSchemaParser {
 
     val t = aux(tokens)
     if (isOptional) OptionType(t) else t
+  }
+
+  /**
+    * Get depth of type, if it is `OrType`(or wrapped `OrType`), and 0 otherwise.
+    *
+    * @param t parsed type
+    * @return depth of type
+    */
+  def orTypeDepth(t: ParsedType): Int = t match {
+    case OrType(_, b)   ⇒ 1 + orTypeDepth(b)
+    case OptionType(tp) ⇒ orTypeDepth(tp)
+    case _              ⇒ 0
+    //TODO: what about list, what depth is it?
+  }
+
+  def extractStructNames(t: ParsedType): Seq[String] = t match {
+    case StructType(name) ⇒ Seq(name)
+    case OptionType(tp)   ⇒ extractStructNames(tp)
+    case ListType(tp)     ⇒ extractStructNames(tp)
+    case OrType(a, b)     ⇒ extractStructNames(a) ++ extractStructNames(b)
+    case _                ⇒ Seq.empty
   }
 
   /**

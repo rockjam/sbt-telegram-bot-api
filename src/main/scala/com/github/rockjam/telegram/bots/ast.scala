@@ -18,7 +18,7 @@ package com.github.rockjam.telegram.bots
 
 import scala.collection.immutable.Seq
 
-sealed trait ParsedType
+sealed trait ParsedType extends Product with Serializable
 
 /**
   * Represents literal type that can be mapped to scala's standard types.

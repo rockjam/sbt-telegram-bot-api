@@ -38,4 +38,24 @@ object Main extends App {
         TRUNCATE_EXISTING
       )
   }
+//
+//  val allFields = schema.structs.flatMap(_.fields) ++ schema.methods.flatMap(_.fields)
+//
+//  val deep = allFields.groupBy(_.typ) collect {
+//    case (typ, fields) if depth(typ) >= 3 ⇒
+//      val name = fields
+//        .map(_.name)
+//        .distinct
+//        .headOption
+//        .map(n ⇒ StringUtils.camelize(n).capitalize)
+//        .getOrElse(sys.error("Failed to get common name for derived"))
+//      name → typ
+//  }
+//
+//  def depth(t: ParsedType): Int = t match {
+//    case OrType(_, b)   ⇒ 1 + depth(b)
+//    case OptionType(tp) ⇒ depth(tp)
+//    case _              ⇒ 0
+//  }
+//
 }
