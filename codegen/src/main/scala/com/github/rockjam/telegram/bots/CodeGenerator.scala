@@ -22,7 +22,7 @@ import scala.meta._
 object CodeGenerator {
 
   /**
-    * Generate source code from strucutred schema.
+    * Generate source code from structured schema.
     *
     * Transformation rules:
     * • `schema.structs` become case classes

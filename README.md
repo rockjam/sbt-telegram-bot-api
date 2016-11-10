@@ -2,6 +2,9 @@
 
 Welcome to telegram-bots!
 
+## Developer notes
+* Json4s doesn't play nice with type aliases. they have issue for that. Okay... 
+
 ## Todos
 - [X] Extract return type for methods
 - [X] InlineQueryResult/InputMessageContent are sealed traits and concrete case classes extends it
