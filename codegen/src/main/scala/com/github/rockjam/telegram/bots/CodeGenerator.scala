@@ -109,17 +109,25 @@ object CodeGenerator {
     * @return method case class
     */
   private def methodToCaseClass(meth: Method): Defn.Class = {
-    val methodName = Type.Name(meth.name.capitalize)
-    val params     = meth.fields map toParam
-    val returnType = toScalaType(meth.responseType)
+    // TODO: add method override def requestName: String = `meth.name`
+    val methodName   = Type.Name(meth.name.capitalize)
+    val params       = meth.fields map toParam
+    val responseType = toScalaType(meth.responseType)
 
-    q"final case class $methodName ( ..$params ) extends BotApiRequest[$returnType]"
+    val innerType = q"type Resp = $responseType"
+
+    q"final case class $methodName ( ..$params ) extends BotApiRequest { $innerType }"
   }
 
   private val InputFile: Defn.Class = q"final case class InputFile(fileId: String)"
 
   // base type for all bot API methods
-  private val BotApiRequest: Defn.Trait = q"sealed trait BotApiRequest[Resp]"
+  // TODO: add method def requestName: String
+  private val BotApiRequest: Defn.Trait =
+    q"""sealed trait BotApiRequest {
+          type Resp
+        }
+     """
 
   /**
     * Produce package name for given package
@@ -129,8 +137,15 @@ object CodeGenerator {
     * @return package for object
     */
   private def packageObject(basePackage: String) = {
+    // TODO: maybe ApiResponse should not be there
     val stats = Seq(
-      q"type ChatId = Either[Long, String]"
+      q"type ChatId = Either[Long, String]",
+      q"""final case class ApiResponse[Resp](
+        ok: Boolean,
+        result: Option[Resp],
+        description: Option[String],
+        errorCode: Option[Int])
+      """
     )
 
     val (optPackage, packObjName) = (basePackage split "\\.").toList match {
@@ -173,8 +188,8 @@ object CodeGenerator {
     */
   private def toScalaType(parsedType: ParsedType): Type = {
     def alias(pt: ParsedType): Option[Type] = pt match {
-      case OrType(LiteralType("Integer" | "Int"), LiteralType("String")) ⇒ Some(t"ChatId")
-      case _                                                             ⇒ None
+//      case OrType(LiteralType("Integer" | "Int"), LiteralType("String")) ⇒ Some(t"ChatId")
+      case _ ⇒ None
     }
 
     val literalType: PartialFunction[String, Type] = {

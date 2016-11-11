@@ -10,15 +10,16 @@ object Version {
 }
 
 object Library {
-  val circeCore    = "io.circe"       %% "circe-core"     % Version.Circe
-  val circeGeneric = "io.circe"       %% "circe-generic"  % Version.Circe
-  val circeParser  = "io.circe"       %% "circe-parser"   % Version.Circe
-  val jsoup        = "org.jsoup"      %  "jsoup"          % Version.Jsoup
-  val scalameta    = "org.scalameta"  %% "scalameta"      % Version.Scalameta
-  val scalaReflect = "org.scala-lang" % "scala-reflect"   % Version.Scala
-  val scalaTest    = "org.scalatest"  %% "scalatest"      % Version.ScalaTest
-  val json4s       = "org.json4s"     %% "json4s-jackson" % Version.Json4s
-  val json4sExt    = "org.json4s"     %% "json4s-ext"     % Version.Json4s
+  val circeCore          = "io.circe"       %% "circe-core"           % Version.Circe
+  val circeGeneric       = "io.circe"       %% "circe-generic"        % Version.Circe
+  val circeGenericExtras = "io.circe"       %% "circe-generic-extras" % Version.Circe
+  val circeParser        = "io.circe"       %% "circe-parser"         % Version.Circe
+  val jsoup              = "org.jsoup"      %  "jsoup"                % Version.Jsoup
+  val scalameta          = "org.scalameta"  %% "scalameta"            % Version.Scalameta
+  val scalaReflect       = "org.scala-lang" % "scala-reflect"         % Version.Scala
+  val scalaTest          = "org.scalatest"  %% "scalatest"            % Version.ScalaTest
+  val json4s             = "org.json4s"     %% "json4s-jackson"       % Version.Json4s
+  val json4sExt          = "org.json4s"     %% "json4s-ext"           % Version.Json4s
 }
 
 object Dependencies {
@@ -27,6 +28,7 @@ object Dependencies {
   val circeKit = Vector(
     circeCore,
     circeGeneric,
+    circeGenericExtras,
     circeParser
   )
 

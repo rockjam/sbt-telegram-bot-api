@@ -20,45 +20,80 @@ import java.nio.file.StandardOpenOption.{ CREATE, TRUNCATE_EXISTING }
 import java.nio.file.{ Files, Paths }
 
 import scala.collection.immutable.Seq
+import scala.reflect.runtime.universe._
 
 object Main extends App {
 
-  // regenerate schema only when something is passed as args
-  if (args.nonEmpty) {
-    val schemaUrl      = "https://core.telegram.org/bots/api"
-    val schema: Schema = HTMLSchemaParser.parse(schemaUrl)
-    val trees: Map[String, Seq[String]] =
-      CodeGenerator.generate("com.github.rockjam.telegram.bots.models", schema)
-    val basePath = Paths.get("models/src/main/scala/com/github/rockjam/telegram/bots/models")
-    Files.createDirectories(basePath)
-    trees foreach {
-      case (k, defns) ⇒
-        Files.write(
-          basePath.resolve(k),
-          defns.mkString("", "\n", "\n").getBytes,
-          CREATE,
-          TRUNCATE_EXISTING
-        )
-    }
+  import com.github.rockjam.telegram.bots.models._
+  import com.github.rockjam.telegram.bots.json4s._
+//  import com.github.rockjam.telegram.bots.circe._
+//  import io.circe.generic.extras.auto._ // TODO: this should GONE after we genereate semiauto encoders
+  import JsonHelpers._
+
+  val user = User(123L, "John", Some("Doe"), None)
+
+  val userThere = toJson(user)
+  val userBack  = fromJson[User](userThere)
+
+  println(s"User there: ${userThere}")
+  println(s"User back: ${userBack}")
+
+  val kick = KickChatMember(Right("hellowo"), 21L)
+
+  val kickThere = toJson(kick)
+  val kickBack  = fromJson[KickChatMember](kickThere)
+
+  println(s"Kick there: ${kickThere}")
+  println(s"Kick back: ${kickBack}")
+
+  def serializeRequest(req: BotApiRequest) =
+    toJson(req)
+//  serializeRequest(
+//    GetFile("somefile")
+//  )
+
+  val reply: ReplyMarkup = ForceReply(forceReply = true, None)
+
+  val replyThere = toJson(reply)
+  println(s"Reply there: ${replyThere}")
+
+  val getFile = GetFile("somefile")
+
+  val getFileThere = toJson(getFile)
+  println(s"Get file there: ${getFileThere}")
+
+  def reqResp(req: BotApiRequest)(implicit tt: TypeTag[req.Resp]): ApiResponse[req.Resp] = {
+    val json = serializeRequest(req)
+    println(s"json is: ${json}")
+
+    println(s"=====tt 1: ${tt}")
+    val resp = makeRequest[req.Resp](json)
+    println(s"resp: ${resp}")
+    resp
   }
 
-//  import com.github.rockjam.telegram.bots.models._
-//  import com.github.rockjam.telegram.bots.json4s._
-//  import JsonHelpers._
-//
-//  val user = User(123L, "John", Some("Doe"), None)
-//
-//  val userThere = toJson(user)
-//  val userBack  = fromJson[User](userThere)
-//
-//  println(s"User there: ${userThere}")
-//  println(s"User back: ${userBack}")
-//
-//  val kick = KickChatMember(Left(21L), 21L)
-//
-//  val kickThere = toJson(kick)
-//  val kickBack  = fromJson[KickChatMember](kickThere)
-//
-//  println(s"Kick there: ${kickThere}")
-//  println(s"Kick back: ${kickBack}")
+  val fileResp = reqResp(GetFile("someFile"))
+  println(s"=== jsoned :${toJson(fileResp)}")
+  val getMeResp = reqResp(GetMe())
+
+  def makeRequest[T: TypeTag](json: String) = {
+    val tt = typeOf[T]
+    println(s"=====tt 2: ${tt}")
+    val result = tt match {
+      case t if t =:= typeOf[File] ⇒
+        File("sss", Some(22L), Some("qweqew"))
+      case t if t =:= typeOf[User] ⇒
+        User(1213L, "John", Some("Doe"), None)
+    }
+
+    ApiResponse(
+      ok = true,
+      result = Some(
+        result.asInstanceOf[T]
+      ),
+      Some("this is description"),
+      None
+    )
+  }
+
 }

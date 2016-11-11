@@ -16,7 +16,7 @@
 
 package com.github.rockjam.telegram.bots
 
-import com.github.rockjam.telegram.bots.models.{ Decoder, Encoder }
+import com.github.rockjam.telegram.bots.models.{ Decode, Encode }
 
 import scala.reflect.Manifest
 
@@ -24,7 +24,7 @@ object JsonHelpers extends JsonHelpers
 
 trait JsonHelpers {
 
-  def toJson[T: Encoder](v: T): String                = implicitly[Encoder[T]].apply(v)
-  def fromJson[T: Decoder: Manifest](json: String): T = implicitly[Decoder[T]].apply(json)
+  def toJson[T: Encode](v: T): String                = implicitly[Encode[T]].apply(v)
+  def fromJson[T: Decode: Manifest](json: String): T = implicitly[Decode[T]].apply(json)
 
 }

@@ -17,19 +17,22 @@
 package com.github.rockjam.telegram.bots
 
 import com.github.rockjam.telegram.bots.models.{ Decode, Encode }
-import org.json4s._
-import org.json4s.jackson.JsonMethods.{ compact, parse, render }
+import io.circe.{ Decoder, Encoder }
 
-package object json4s extends Json4sFormats {
+package object circe extends CustomEncoders with BotApiEncoders {
 
-  implicit def encode[T]: Encode[T] = new Encode[T] {
-    def apply(v: T): String =
-      compact(render(Extraction.decompose(v).snakizeKeys))
+  import io.circe.parser
+
+  implicit def encode[T](implicit encoder: Encoder[T]): Encode[T] = new Encode[T] {
+    def apply(v: T): String = encoder(v).noSpaces
   }
 
-  implicit def decode[T]: Decode[T] = new Decode[T] {
+  implicit def decode[T](implicit decoder: Decoder[T]): Decode[T] = new Decode[T] {
     def apply(json: String)(implicit m: Manifest[T]): T =
-      parse(json).camelizeKeys.extract[T](formats, manifest)
-
+      parser.decode[T](json) match {
+        case Left(e)  ⇒ throw new RuntimeException(s"Failed to decode json: ${json}", e)
+        case Right(t) ⇒ t
+      }
   }
+
 }

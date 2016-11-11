@@ -14,14 +14,13 @@
  * limitations under the License.
  */
 
-package com.github.rockjam.telegram.bots.models
+package com.github.rockjam.telegram.bots
 
-//TODO: move somewhere, to generated sources, or other sub-project
-trait Encode[T] {
-  def apply(v: T): String
-}
+/**
+  * Generates encoders and decoders for generic semiauto
+  */
+object CirceCodeGenerator {
 
-//TODO: move somewhere, to generated sources, or other sub-project
-trait Decode[T] {
-  def apply(json: String)(implicit m: Manifest[T]): T
+  def generate(schema: Schema) = {}
+
 }

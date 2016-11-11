@@ -12,6 +12,7 @@ Welcome to telegram-bots!
 - [X] Derive trait from OrType with more than 2 cases
 - [X] InputFile write
 - [X] Write requests and data structures to separate files, with possibility to specify package name.
+- [ ] Specify names for BotApiRequest[Resp] { def requestName: String }
 - [ ] Extract "must be" and "can be", and such
 - [ ] Enum support
 - [ ] Add proper logging
