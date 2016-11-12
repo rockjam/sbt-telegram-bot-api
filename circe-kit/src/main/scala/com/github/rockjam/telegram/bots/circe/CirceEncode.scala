@@ -22,16 +22,17 @@ import io.circe.generic.extras.Configuration
 
 // This is constant, should not be generated.
 trait CirceEncode {
+  import io.circe.syntax._
   import io.circe.parser
 
   implicit lazy val derivationConfig: Configuration =
     Configuration.default.withSnakeCaseKeys.withDefaults
 
-  implicit def encode[T](implicit encoder: Encoder[T]): Encode[T] = new Encode[T] {
-    def apply(v: T): String = encoder(v).noSpaces
+  implicit def encode[T: Encoder]: Encode[T] = new Encode[T] {
+    def apply(v: T): String = v.asJson.noSpaces
   }
 
-  implicit def decode[T](implicit decoder: Decoder[T]): Decode[T] = new Decode[T] {
+  implicit def decode[T: Decoder]: Decode[T] = new Decode[T] {
     def apply(json: String)(implicit m: Manifest[T]): T =
       parser.decode[T](json) match {
         case Left(e)  ⇒ throw new RuntimeException(s"Failed to decode json: ${json}", e)
