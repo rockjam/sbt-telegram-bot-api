@@ -1,6 +1,14 @@
-# telegram-bots
+# Telegram Bot API for scala
 
-Welcome to telegram-bots!
+This project aims to provide convenient way to write Telegram bots in scala, without strict dependency on concrete json or http library.
+
+## Getting started
+
+```
+$ sbt
+> codegen/run
+> compile
+```
 
 ## Developer notes
 * Json4s doesn't play nice with type aliases. they have issue for that. Okay... 
