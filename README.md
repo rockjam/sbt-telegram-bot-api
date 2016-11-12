@@ -12,10 +12,13 @@ Welcome to telegram-bots!
 - [X] Derive trait from OrType with more than 2 cases
 - [X] InputFile write
 - [X] Write requests and data structures to separate files, with possibility to specify package name.
-- [ ] Specify names for BotApiRequest[Resp] { def requestName: String }
+- [X] Specify names for BotApiRequest { def requestName: String }
 - [ ] Extract "must be" and "can be", and such
 - [ ] Enum support
 - [ ] Add proper logging
+- [ ] Improve testing. It would be great, if we could write one set of tests, and parametrize them with circe/json4s/play object, that contains encode[T]
+- [ ] Extract common function for scala meta, like package declaration, and such.
+- [ ] Figure out, where all common code should be. Should we generate it every time?
 
 ## Contribution policy
 

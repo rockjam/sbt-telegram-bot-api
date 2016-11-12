@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-package com.github.rockjam.telegram.bots.models
+package com.github.rockjam.telegram.bots
 
-//TODO: move to generated sources, I guess
-// This is constant, may not be generated.
-object ChatId {
-  def apply(l: Long): Either[Long, String]   = Left(l)
-  def apply(s: String): Either[Long, String] = Right(s)
+import scala.meta._
+
+object ScalametaCommon {
+
+  def packageDef(name: String): Pkg = q"package ${Term.Name(name)} { }"
+
 }

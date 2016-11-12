@@ -16,27 +16,44 @@
 
 package com.github.rockjam.telegram.bots
 
-import java.nio.file.{ Files, Paths }
+import java.nio.file.{ Files, Path, Paths }
 import java.nio.file.StandardOpenOption._
-
-import scala.collection.immutable.Seq
 
 object Main extends App {
   val schemaUrl      = "https://core.telegram.org/bots/api"
   val schema: Schema = HTMLSchemaParser.parse(schemaUrl)
-  val trees: Map[String, Seq[String]] =
-    CodeGenerator.generate("com.github.rockjam.telegram.bots.models", schema)
+  val modelsPackage  = "com.github.rockjam.telegram.bots.models"
+  val circePackage   = "com.github.rockjam.telegram.bots.circe"
+
+  val entitiesTrees: Map[String, String] =
+    CodeGenerator.generate(modelsPackage, schema).mapValues(_.mkString("", "\n", "\n"))
   // should be scr_managed at compile time.
-  val basePath = Paths.get("models/src/main/scala/com/github/rockjam/telegram/bots/models")
-  Files.createDirectories(basePath)
-  trees foreach {
-    case (k, defns) ⇒
-      Files.write(
-        basePath.resolve(k),
-        defns.mkString("", "\n", "\n").getBytes,
-        CREATE,
-        TRUNCATE_EXISTING
-      )
+  writeFiles(
+    basePath = Paths.get("models/src/main/scala/com/github/rockjam/telegram/bots/models"),
+    toWrite = entitiesTrees
+  )
+
+  val circeTrees: Map[String, String] =
+    CirceCodeGenerator
+      .generate(schema, circePackage, modelsPackage)
+      .mapValues(_.mkString("", "\n", "\n"))
+
+  writeFiles(
+    basePath = Paths.get("circe-kit/src/main/scala/com/github/rockjam/telegram/bots/circe"),
+    toWrite = circeTrees
+  )
+
+  private def writeFiles(basePath: Path, toWrite: Map[String, String]): Unit = {
+    Files.createDirectories(basePath)
+    toWrite foreach {
+      case (k, defn) ⇒
+        Files.write(
+          basePath.resolve(k),
+          defn.getBytes,
+          CREATE,
+          TRUNCATE_EXISTING
+        )
+    }
   }
 
 }

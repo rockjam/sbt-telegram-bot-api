@@ -14,11 +14,17 @@
  * limitations under the License.
  */
 
-package com.github.rockjam.telegram.bots.models
+package com.github.rockjam.telegram.bots.circe
 
-//TODO: move to generated sources, I guess
-// This is constant, may not be generated.
-object ChatId {
-  def apply(l: Long): Either[Long, String]   = Left(l)
-  def apply(s: String): Either[Long, String] = Right(s)
+// This is constant, should not be generated.
+//implementation taken from: https://github.com/travisbrown/circe/issues/216#issuecomment-219290054
+trait EitherEncoders {
+
+  import io.circe._, io.circe.syntax._
+
+  implicit def eitherEncoder[A: Encoder, B: Encoder]: Encoder[Either[A, B]] =
+    Encoder.instance(_.fold(_.asJson, _.asJson))
+
+  implicit def eitherDecoder[A: Decoder, B: Decoder]: Decoder[Either[A, B]] =
+    Decoder[A].map(Left.apply).or(Decoder[B].map(Right.apply))
 }

@@ -16,23 +16,10 @@
 
 package com.github.rockjam.telegram.bots
 
-import com.github.rockjam.telegram.bots.models.{ Decode, Encode }
-import io.circe.{ Decoder, Encoder }
-
-package object circe extends CustomEncoders with BotApiEncoders {
-
-  import io.circe.parser
-
-  implicit def encode[T](implicit encoder: Encoder[T]): Encode[T] = new Encode[T] {
-    def apply(v: T): String = encoder(v).noSpaces
-  }
-
-  implicit def decode[T](implicit decoder: Decoder[T]): Decode[T] = new Decode[T] {
-    def apply(json: String)(implicit m: Manifest[T]): T =
-      parser.decode[T](json) match {
-        case Left(e)  ⇒ throw new RuntimeException(s"Failed to decode json: ${json}", e)
-        case Right(t) ⇒ t
-      }
-  }
-
-}
+// TODO: figure out, should we generate it, or not?
+package object circe
+    extends CirceEncode
+    with EitherEncoders
+    with StructuresEncoders
+    with MethodResponseDecoders
+    with MethodsEncoders

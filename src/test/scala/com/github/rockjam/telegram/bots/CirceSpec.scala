@@ -19,15 +19,15 @@ package com.github.rockjam.telegram.bots
 import com.github.rockjam.telegram.bots.models._
 import io.circe.Json
 
-class Json4sSpec extends SpecBase with SpecHelpers {
-  behavior of "json4s"
+class CirceSpec extends SpecBase with SpecHelpers {
+  behavior of "circe"
 
   it should "encode and decode requests" in one
 
   it should "encode either in untagged representation" in two
 
   // This import defines what we actually test.
-  import com.github.rockjam.telegram.bots.json4s._
+  import com.github.rockjam.telegram.bots.circe._
 
   def one(): Unit = {
     import io.circe.syntax._

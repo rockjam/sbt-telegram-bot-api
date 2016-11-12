@@ -19,42 +19,34 @@ package com.github.rockjam.telegram.bots
 import scala.collection.immutable.Seq
 import scala.meta._
 
+//Generates bot api entities
 object CodeGenerator {
 
   /**
-    * Generate source code from structured schema.
+    * Generate entities source code from structured schema.
     *
     * Transformation rules:
     * • `schema.structs` become case classes
     * • `schema.baseTypes` become traits
-    * • `schema.methods` become case classes that extends `BotApiRequest[ResponseType]`
+    * • `schema.methods` become case classes that extends `BotApiRequest`
     *
     * Generated sources split in three files:
-    * • package.scala: package object with common code(type aliases, etc)
+    * • package.scala: package object with common code(type aliases, etc.)
     * • structures.scala: traits definitions, definitions of structures and generated InputFile structure
-    * • methods.scala: methods case classes definitiion
+    * • methods.scala: methods case classes definition
     *
     * @param basePackage base package name
     * @param schema Telegram bot API structured schema
     * @return mapping from file name to sequence of sources
     */
   def generate(basePackage: String, schema: Schema): Map[String, Seq[String]] = {
-    val packageName = packageDef(basePackage)
+    val packageName = ScalametaCommon.packageDef(basePackage)
     val packObject  = packageObject(basePackage)
 
-    val traitTrees = schema.baseTypes map baseTypeToTrait
-//    println("========================== Traits")
-//    traitTrees foreach println
-
+    val traitTrees     = schema.baseTypes map baseTypeToTrait
     val structureTrees = schema.structs map structureToCaseClass
-//    println("========================== Structures")
-//    structureTrees foreach println
 
-//    println("========================== BotApiRequest")
-//    println(BotApiRequest)
     val methodTrees = schema.methods map methodToCaseClass
-//    println("========================== Methods")
-//    methodTrees foreach println
 
     Map(
       "package.scala" → packObject.map(_.syntax),
@@ -109,25 +101,29 @@ object CodeGenerator {
     * @return method case class
     */
   private def methodToCaseClass(meth: Method): Defn.Class = {
-    // TODO: add method override def requestName: String = `meth.name`
-    val methodName   = Type.Name(meth.name.capitalize)
-    val params       = meth.fields map toParam
-    val responseType = toScalaType(meth.responseType)
+    val methodName = Type.Name(meth.name.capitalize)
+    val params     = meth.fields map toParam
 
-    val innerType = q"type Resp = $responseType"
+    val stats: Seq[Stat] = {
+      val requestName  = q"override def requestName: String = ${meth.name}"
+      val responseType = q"type Resp = ${toScalaType(meth.responseType)}"
+      Seq(requestName, responseType)
+    }
 
-    q"final case class $methodName ( ..$params ) extends BotApiRequest { $innerType }"
+    q"final case class $methodName ( ..$params ) extends BotApiRequest { ..$stats }"
   }
 
   private val InputFile: Defn.Class = q"final case class InputFile(fileId: String)"
 
   // base type for all bot API methods
-  // TODO: add method def requestName: String
-  private val BotApiRequest: Defn.Trait =
-    q"""sealed trait BotApiRequest {
-          type Resp
-        }
-     """
+  private val BotApiRequest: Defn.Trait = {
+    val stats: Seq[Stat] = {
+      val resp    = q"type Resp"
+      val reqName = q"def requestName: String"
+      Seq(resp, reqName)
+    }
+    q"sealed trait BotApiRequest { ..$stats }"
+  }
 
   /**
     * Produce package name for given package
@@ -149,8 +145,8 @@ object CodeGenerator {
     )
 
     val (optPackage, packObjName) = (basePackage split "\\.").toList match {
-      case init :+ last   ⇒ Some(packageDef(init mkString ".")) → last
-      case List() :+ last ⇒ None                                → last
+      case init :+ last   ⇒ Some(ScalametaCommon.packageDef(init mkString ".")) → last
+      case List() :+ last ⇒ None                                                → last
     }
 
     val packObj = {
@@ -160,11 +156,6 @@ object CodeGenerator {
     }
 
     optPackage.fold(Seq[Stat](packObj))(p ⇒ Seq(p, packObj))
-  }
-
-  private def packageDef(name: String): Pkg = {
-    val p = Term.Name(name)
-    q"package $p { }"
   }
 
   /**

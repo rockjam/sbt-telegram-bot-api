@@ -18,9 +18,11 @@ package com.github.rockjam.telegram.bots
 
 import java.util.Locale._
 
-// Taken from https://github.com/json4s/json4s project: org.json4s.MonadicJValue
 object StringUtils {
+  def lowerize(word: String): String =
+    word.headOption map (_.toLower + word.tail) getOrElse word
 
+  // Taken from https://github.com/json4s/json4s project: org.json4s.MonadicJValue as is
   def camelize(word: String): String = {
     val w = pascalize(word)
     w.substring(0, 1).toLowerCase(ENGLISH) + w.substring(1)
