@@ -63,13 +63,13 @@ class Json4sSpec extends SpecBase with SpecHelpers {
 
       Json
         .obj(
-          "id"                          → resp.id.asJson,
-          "type"                        → resp.`type`.asJson,
-          "title"                       → resp.title.asJson,
-          "username"                    → resp.username.asJson,
-          "firstName"                   → resp.firstName.asJson,
-          "lastName"                    → resp.lastName.asJson,
-          "allMembersAreAdministrators" → resp.allMembersAreAdministrators.asJson
+          "id"                             → resp.id.asJson,
+          "type"                           → resp.`type`.asJson,
+          "title"                          → resp.title.asJson,
+          "username"                       → resp.username.asJson,
+          "first_name"                     → resp.firstName.asJson,
+          "last_name"                      → resp.lastName.asJson,
+          "all_members_are_administrators" → resp.allMembersAreAdministrators.asJson
         )
         .asJson
         .noSpaces
