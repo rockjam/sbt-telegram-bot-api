@@ -28,6 +28,20 @@ $ sbt
 - [ ] Extract common function for scala meta, like package declaration, and such.
 - [ ] Figure out, where all common code should be. Should we generate it every time?
 
+### About testing.
+For json modules we need to test that all requests(methods) are serialized properly among all json libraries we support.
+
+Each of these test should consist of following steps:
+1. Construct request case class
+2. Make fake response json object(reference representation): `ApiResponse` with result in it. Keep data for future check
+3. Pass request to method which accepts `BotApiRequest`(base type)
+4. Serialize request to json
+5. Compare serialized request with reference representation of request 
+6. Compare deserialized fake response with data we made at step 2.
+
+Thus, we need reference json representation of all requests(methods) and responses. We can try to generate it.
+It would be great to test different data with property testing.
+
 ## Contribution policy
 
 Contributions via GitHub pull requests are gladly accepted from their original author. Along with any pull requests, please state that the contribution is your original work and that you license the work to the project under the project's open source license. Whether or not you state this explicitly, by submitting any copyrighted material via pull request, email, or other means you agree to license the material under the project's open source license and warrant that you have the legal authority to do so.
