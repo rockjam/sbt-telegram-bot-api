@@ -14,6 +14,22 @@
  * limitations under the License.
  */
 
-package com.github.rockjam.telegram.bots
+package com.github.rockjam.telegram.bots.json4s
 
-package object json4s extends Json4sEncode with Json4sFormats
+import com.github.rockjam.telegram.bots.models.{ Decode, Encode }
+import org.json4s.Extraction
+import org.json4s.jackson.JsonMethods._
+
+trait Json4sEncode {
+
+  implicit def encode[T]: Encode[T] = new Encode[T] {
+    def apply(v: T): String =
+      compact(render(Extraction.decompose(v).snakizeKeys))
+  }
+
+  implicit def decode[T]: Decode[T] = new Decode[T] {
+    def apply(json: String)(implicit m: Manifest[T]): T =
+      parse(json).camelizeKeys.extract[T](formats, manifest)
+  }
+
+}
