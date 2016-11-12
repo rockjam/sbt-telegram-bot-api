@@ -3,8 +3,8 @@ lazy val root =
     .in(file("."))
     .settings(libraryDependencies ++= Dependencies.root)
     .enablePlugins(AutomateHeaderPlugin, GitVersioning)
-    .dependsOn(`circe-kit`, codegen, models, `json4s-kit`)
-    .aggregate(`circe-kit`, codegen, models, `json4s-kit`)
+    .dependsOn(`circe-kit`, codegen, models, `json4s-kit`, `play-json-kit`)
+    .aggregate(`circe-kit`, codegen, models, `json4s-kit`, `play-json-kit`)
 
 lazy val `circe-kit` =
   project
@@ -25,6 +25,12 @@ lazy val models =
 lazy val `json4s-kit` =
   project
     .settings(libraryDependencies ++= Dependencies.json4sKit)
+    .enablePlugins(AutomateHeaderPlugin, GitVersioning)
+    .dependsOn(models)
+
+lazy val `play-json-kit` =
+  project
+    .settings(libraryDependencies ++= Dependencies.playJsonKit)
     .enablePlugins(AutomateHeaderPlugin, GitVersioning)
     .dependsOn(models)
 
