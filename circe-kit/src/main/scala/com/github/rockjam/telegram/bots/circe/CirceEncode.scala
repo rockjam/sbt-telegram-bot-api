@@ -17,7 +17,7 @@
 package com.github.rockjam.telegram.bots.circe
 
 import com.github.rockjam.telegram.bots.models.{ Decode, Encode }
-import io.circe.{ Decoder, Encoder }
+import io.circe.{ Decoder, Encoder, Printer }
 import io.circe.generic.extras.Configuration
 
 // This is constant, should not be generated.
@@ -28,8 +28,10 @@ trait CirceEncode {
   implicit lazy val derivationConfig: Configuration =
     Configuration.default.withSnakeCaseKeys.withDefaults
 
+  private val dropNullKeys: Printer = Printer.noSpaces.copy(dropNullKeys = true)
+
   implicit def encode[T: Encoder]: Encode[T] = new Encode[T] {
-    def apply(v: T): String = v.asJson.noSpaces
+    def apply(v: T): String = v.asJson.pretty(dropNullKeys)
   }
 
   implicit def decode[T: Decoder]: Decode[T] = new Decode[T] {

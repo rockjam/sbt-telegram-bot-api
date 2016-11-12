@@ -43,6 +43,7 @@ class CirceSpec extends SpecBase with SpecHelpers {
       )
       .asJson
       .noSpaces
+//      .pretty(dropNullKeys)
 
     val fileResp = checkRequestResponse(req, jsonResp) { cursor ⇒
       cursor.downField("file_id").focus shouldEqual Some(req.fileId.asJson)
@@ -73,6 +74,7 @@ class CirceSpec extends SpecBase with SpecHelpers {
         )
         .asJson
         .noSpaces
+//        .pretty(dropNullKeys)
     }
 
     val chatResp = checkRequestResponse(req, jsonResp) { cursor ⇒
