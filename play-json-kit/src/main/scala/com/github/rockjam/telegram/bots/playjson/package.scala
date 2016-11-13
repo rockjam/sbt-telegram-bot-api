@@ -19,7 +19,11 @@ package com.github.rockjam.telegram.bots
 import com.github.rockjam.telegram.bots.models.{ Decode, Encode }
 import play.api.libs.json.{ Json, Reads, Writes }
 
-package object playjson extends BotApiWrites {
+package object playjson
+  extends EitherFormats
+    with StructuresWrites
+    with MethodResponseReads
+    with MethodsWrites {
 
   implicit def encode[T: Writes]: Encode[T] = new Encode[T] {
     def apply(v: T): String = Json.toJson(v).toString

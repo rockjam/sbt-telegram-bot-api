@@ -20,7 +20,9 @@ import scala.annotation.tailrec
 import scala.collection.immutable.Seq
 import scala.meta._
 
-object CirceCodeGenerator {
+object CirceCodeGenerator extends TypeFunctions {
+
+  import ScalametaCommon._
 
   /**
     * Generate source code of circe encoders and decoders for Telegram bot API models.
@@ -43,7 +45,7 @@ object CirceCodeGenerator {
     val me  = methodsEncoders(schema.methods, modelsPackage)
     val mrd = methodResponseDecoders(schema.structs, schema.methods, modelsPackage)
 
-    val pack = ScalametaCommon.packageDef(basePackage)
+    val pack = packageDef(basePackage)
     Map(
       "StructuresEncoders.scala"     → Seq(pack.syntax, se.syntax),
       "MethodsEncoders.scala"        → Seq(pack.syntax, me.syntax),
@@ -197,50 +199,6 @@ object CirceCodeGenerator {
   }
 
   /**
-    * Recursively extract all structure names, that structures from `initialStructNames` depend on.
-    *
-    * @param initialStructNames names of structures we start from
-    * @param allStructs all structures from Telegram bot API
-    * @return extracted set of structure names
-    */
-  private def extractStructNamesDeep(initialStructNames: Set[String],
-                                     allStructs: Seq[Structure]): Set[String] = {
-    val structTypeNames =
-      allStructs.groupBy(_.name).mapValues { structs ⇒ // should be list of single structure
-        (for {
-          struct <- structs
-          field  <- struct.fields
-        } yield extractStructNames(field.typ)).flatten.toSet
-      }
-
-    // for structure names, collect structure types in their fields,
-    // that we not yet found, and execute search for them.
-    @tailrec def aux(structNames: Set[String], foundNames: Set[String]): Set[String] = {
-      val unknownStructTypes = structNames flatMap { name ⇒
-        structTypeNames.getOrElse(name, Set.empty) diff foundNames
-      }
-      if (unknownStructTypes.nonEmpty) aux(unknownStructTypes, foundNames ++ unknownStructTypes)
-      else foundNames
-    }
-
-    aux(initialStructNames, initialStructNames)
-  }
-
-  /**
-    * Extracts structure names from `ParsedType`
-    *
-    * @param typ type from schema
-    * @return sequence of structure names
-    */
-  private def extractStructNames(typ: ParsedType): Seq[String] = typ match {
-    case StructType(name) ⇒ Seq(name)
-    case OptionType(tp)   ⇒ extractStructNames(tp)
-    case ListType(tp)     ⇒ extractStructNames(tp)
-    case OrType(at, bt)   ⇒ extractStructNames(at) ++ extractStructNames(bt)
-    case _                ⇒ Seq.empty
-  }
-
-  /**
     * Produce circe `Encoder`
     *
     * Name prefix should be lowerized
@@ -268,18 +226,6 @@ object CirceCodeGenerator {
   private def circeDecoder(namePrefix: String, decoderType: String): Defn.Val = {
     val decoderName = Pat.Var.Term(Term.Name(s"${namePrefix}Decoder"))
     q"implicit val $decoderName: Decoder[${Type.Name(decoderType)}] = deriveDecoder"
-  }
-
-  /**
-    * Import statement that import everything from `packageName`
-    *
-    * @param packageName name of package
-    * @return import statement
-    */
-  private def singleWildcardImport(packageName: String): Import = {
-    val n = Term.Name(packageName)
-    val i = Seq(importer"$n._")
-    q"import ..$i"
   }
 
   // definition of ApiResponse decoder

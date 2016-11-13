@@ -20,11 +20,13 @@ import java.nio.file.{ Files, Path, Paths }
 import java.nio.file.StandardOpenOption._
 
 object Main extends App {
-  val schemaUrl      = "https://core.telegram.org/bots/api"
-  val schema: Schema = HTMLSchemaParser.parse(schemaUrl)
-  val modelsPackage  = "com.github.rockjam.telegram.bots.models"
-  val circePackage   = "com.github.rockjam.telegram.bots.circe"
+  val schemaUrl       = "https://core.telegram.org/bots/api"
+  val schema: Schema  = HTMLSchemaParser.parse(schemaUrl)
+  val modelsPackage   = "com.github.rockjam.telegram.bots.models"
+  val circePackage    = "com.github.rockjam.telegram.bots.circe"
+  val playJsonPackage = "com.github.rockjam.telegram.bots.playjson"
 
+  // structures, methods
   val entitiesTrees: Map[String, String] =
     CodeGenerator.generate(modelsPackage, schema).mapValues(_.mkString("", "\n", "\n"))
   // should be scr_managed at compile time.
@@ -33,6 +35,7 @@ object Main extends App {
     toWrite = entitiesTrees
   )
 
+  // circe encoders and decoders
   val circeTrees: Map[String, String] =
     CirceCodeGenerator
       .generate(schema, circePackage, modelsPackage)
@@ -41,6 +44,17 @@ object Main extends App {
   writeFiles(
     basePath = Paths.get("circe-kit/src/main/scala/com/github/rockjam/telegram/bots/circe"),
     toWrite = circeTrees
+  )
+
+  // play json writes and reads
+  val playJsonTrees: Map[String, String] =
+    PlayJsonGenerator
+      .generate(schema, playJsonPackage, modelsPackage)
+      .mapValues(_.mkString("", "\n", "\n"))
+
+  writeFiles(
+    basePath = Paths.get("play-json-kit/src/main/scala/com/github/rockjam/telegram/bots/playjson"),
+    toWrite = playJsonTrees
   )
 
   private def writeFiles(basePath: Path, toWrite: Map[String, String]): Unit = {

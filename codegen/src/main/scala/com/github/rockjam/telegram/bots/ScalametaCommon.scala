@@ -16,10 +16,23 @@
 
 package com.github.rockjam.telegram.bots
 
+import scala.collection.immutable.Seq
 import scala.meta._
 
 object ScalametaCommon {
 
   def packageDef(name: String): Pkg = q"package ${Term.Name(name)} { }"
+
+  /**
+    * Import statement that import everything from `packageName`
+    *
+    * @param packageName name of package
+    * @return import statement
+    */
+  def singleWildcardImport(packageName: String): Import = {
+    val n = Term.Name(packageName)
+    val i = Seq(importer"$n._")
+    q"import ..$i"
+  }
 
 }
