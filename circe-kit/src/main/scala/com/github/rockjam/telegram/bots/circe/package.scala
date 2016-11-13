@@ -19,7 +19,7 @@ package com.github.rockjam.telegram.bots
 // TODO: figure out, should we generate it, or not?
 package object circe
     extends CirceEncode
-    with EitherEncoders
+    with EitherCodecs
     with StructuresEncoders
     with MethodResponseDecoders
     with MethodsEncoders

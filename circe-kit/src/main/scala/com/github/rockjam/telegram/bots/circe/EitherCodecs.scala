@@ -18,7 +18,8 @@ package com.github.rockjam.telegram.bots.circe
 
 // This is constant, should not be generated.
 //implementation taken from: https://github.com/travisbrown/circe/issues/216#issuecomment-219290054
-trait EitherEncoders {
+// TODO: rename to codecs
+trait EitherCodecs {
 
   import io.circe._, io.circe.syntax._
 
