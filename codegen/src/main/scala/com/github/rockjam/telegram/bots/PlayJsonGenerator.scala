@@ -40,14 +40,14 @@ object PlayJsonGenerator extends TypeFunctions {
   }
 
   /**
-    * Produce encoders for structures. Pack them in trait.
+    * Produce Writes for structures. Pack them in trait.
     *
-    * For structures that have base type, generate base type encoder. It encodes children without tag.
-    * For all structures generate encoder.
+    * For structures that have base type, generate base type Writes. It will write children without tag.
+    * For all structures generate Writes.
     *
-    * @param structs all structures from Telegram bot API
+    * @param structs       all structures from Telegram bot API
     * @param modelsPackage package where all models are
-    * @return trait containing encoders for all structures
+    * @return trait containing Writes for all structures
     */
   private def structuresWrites(structs: Seq[Structure], modelsPackage: String): Defn.Trait = {
     val modelsImport = singleWildcardImport(modelsPackage)
@@ -57,7 +57,7 @@ object PlayJsonGenerator extends TypeFunctions {
         val lowname  = StringUtils.lowerize(name)
         val typeName = name
 
-        makeWrites(lowname, typeName, fields.length)
+        makeWrites(lowname, typeName, fields)
     }
 
     val structureBaseWrites = {
@@ -68,68 +68,44 @@ object PlayJsonGenerator extends TypeFunctions {
 
       (baseChildren map {
         case (baseType, children) ⇒
-          val writesName = Pat.Var.Term(getWritesName(StringUtils.lowerize(baseType.name)))
-          val writesType = Type.Name(baseType.name)
-
-          val cases = children map { childName ⇒
-            writesCase(
-              name = StringUtils.lowerize(childName),
-              typeName = childName
-            )
-          }
-
-          q"""
-          implicit val $writesName: Writes[$writesType] = new Writes[$writesType] {
-            def writes(o: $writesType): JsValue = o match { ..case $cases }
-          }
-        """
+          baseWrites(baseType.name, children)
       }).toSeq
     }
 
-    val stats: Seq[Stat] = Seq(modelsImport, PlayJsonCommonImports, EmptyWrites) ++
+    val stats: Seq[Stat] = Seq(modelsImport, CommonImports, EmptyWrites) ++
         structureBaseWrites ++
         structWrites
     q"trait StructuresWrites { ..$stats }"
   }
 
   /**
-    * Produce encoders for methods. Pack them in trait.
+    * Produce Writes for methods. Pack them in trait.
     *
-    * BotApiRequest is base type of all methods. Generate encoder for this base type.
-    * It will encode children in untagged representation.
+    * BotApiRequest is base type of all methods. Generate Writes for this base type.
+    * It will write children in untagged representation.
     *
-    * For all methods generate encoders.
+    * For all methods generate Writes.
     *
-    * @param meths all methods from Telegram bot API
+    * @param meths         all methods from Telegram bot API
     * @param modelsPackage package where all models are
-    * @return trait containing encoders for all methods
+    * @return trait containing Writes for all methods
     */
   private def methodsWrites(meths: Seq[Method], modelsPackage: String): Defn.Trait = {
     val modelsImport = singleWildcardImport(modelsPackage)
 
-    val botApiRequestWrites = {
-      val cases = meths map {
-        case Method(name, _, _) ⇒
-          writesCase(name, name.capitalize)
-      }
-
-      q"""
-        implicit val botApiRequestWrites: Writes[BotApiRequest] = new Writes[BotApiRequest] {
-          def writes(o: BotApiRequest): JsValue = o match { ..case $cases }
-        }
-      """
-    }
+    val botApiRequestWrites =
+      baseWrites("BotApiRequest", meths map (_.name))
 
     val methWrites = meths map {
       case Method(name, _, fields) ⇒
         val lowname  = name
         val typeName = name.capitalize
-        makeWrites(lowname, typeName, fields.length)
+        makeWrites(lowname, typeName, fields)
     }
 
     val stats: Seq[Stat] = Seq(
         modelsImport,
-        PlayJsonCommonImports,
+        CommonImports,
         EmptyWrites,
         botApiRequestWrites,
         InputFileWrites) ++ methWrites
@@ -137,17 +113,18 @@ object PlayJsonGenerator extends TypeFunctions {
   }
 
   /**
-    * Produce decoders for method's response types. Pack them in trait
-    * Response types are usually structures or literal types. Decoders for literal types we get for free.
-    * We also don't need to produce decoders for all structures in schema,
+    * Produce Reads for method's response types. Pack them in trait
+    * Response types are usually structures or literal types. Reads for literal types we get for free.
+    * We also don't need to produce Reads for all structures in schema,
     * cause we know exact response types for all methods.
     *
-    * @note if `method.responseType` is a structure, its fields type may be structural type. So we need to generate decoder for this type too.
+    * @note if `method.responseType` is a structure, its fields type may be structural type.
+    *       So we need to generate Reads for this type too.
     *
-    * @param structs all structures from Telegram bot API
-    * @param meths all methods from Telegram bot API
+    * @param structs       all structures from Telegram bot API
+    * @param meths         all methods from Telegram bot API
     * @param modelsPackage package where all models are
-    * @return trait containing decoders for all structural response types, and structural types they depend on.
+    * @return trait containing Reads for all structural response types, and structural types they depend on.
     */
   private def methodResponseReads(structs: Seq[Structure],
                                   meths: Seq[Method],
@@ -163,57 +140,56 @@ object PlayJsonGenerator extends TypeFunctions {
         )
       }
 
-      allResponseTypeStructNames map { name ⇒
-        playJsonReads(
-          namePrefix = StringUtils.lowerize(name),
-          typeName = name
+      structs.filter(s ⇒ allResponseTypeStructNames.contains(s.name)) map { struct ⇒
+        makeReads(
+          namePrefix = StringUtils.lowerize(struct.name),
+          typeName = struct.name,
+          fields = struct.fields
         )
       }
     }
 
-    val playFunctionalImport = singleWildcardImport("_root_.play.api.libs.functional.syntax")
-    val stats: Seq[Stat] = Seq(
-        modelsImport,
-        PlayJsonCommonImports,
-        playFunctionalImport,
-        ApiResponseReads) ++ reads
+    val stats: Seq[Stat] = Seq(modelsImport, CommonImports, ApiResponseReads) ++ reads
     q"trait MethodResponseReads { ..$stats }"
   }
 
   /**
-    * name should be lowerized
-    * type name should be capitalized
+    * make Writes for entity.
     *
-    * @param name ??? or name prefix
-    * @param typeName
-    * @return
+    * Writes in play-json handled specially for entities with 0 fields
+    * and entities with more than 22 fields. For this cases we generate special Writes.
+    *
+    * @note
+    *       Name prefix should be lowerized
+    *       Type name  should be capitalized
+    *
+    * @param namePrefix writes name prefix
+    * @param typeName writes type
+    * @param fields entity fields
+    * @return definition of Writes
     */
-  private def writesCase(name: String, typeName: String): Case = {
-    val writesName = arg"${getWritesName(name)}"
-    val writesType = Type.Name(typeName)
-    p"case x: $writesType => Json.toJson[$writesType](x)($writesName)"
-  }
-
-  // TODO: writes for structures with 22+ fields
-  private def makeWrites(namePrefix: String, typeName: String, numberOfFields: Int) = {
+  private def makeWrites(namePrefix: String, typeName: String, fields: Seq[Field]): Defn.Val = {
     def playJsonEmptyWrites(namePrefix: String, typeName: String): Defn.Val = {
       val writesName = Pat.Var.Term(getWritesName(namePrefix))
       val writesType = Type.Name(typeName)
       q"implicit val $writesName: Writes[$writesType] = emptyWrites"
     }
 
-    if (numberOfFields == 0) { // for empty case classes macro writes generator doesn't work.
+    if (fields.isEmpty) {
+      // for empty case classes macro writes generator doesn't work.
       playJsonEmptyWrites(
         namePrefix = namePrefix,
         typeName = typeName
       )
-    }
-    //        for case classes with 22+ fields macro writes generator doesn't work
-    //        else if(fields.length > 22) {
-    //
-    //        }
-    else {
-      playJsonWrites(
+    } else if (fields.length > 22) {
+      // for case classes with 22+ fields macro writes generator doesn't work
+      writes22Plus(
+        namePrefix = namePrefix,
+        typeName = typeName,
+        fields = fields
+      )
+    } else {
+      writes(
         namePrefix = namePrefix,
         typeName = typeName
       )
@@ -221,39 +197,239 @@ object PlayJsonGenerator extends TypeFunctions {
   }
 
   /**
-    * Produce circe `Encoder`
+    * Produce `Writes`
     *
-    * Name prefix should be lowerized
-    * Encoder type should be capitalized
+    * @note
+    *       Name prefix should be lowerized
+    *       Writes type should be capitalized
     *
-    * @param namePrefix encoder name prefix
-    * @param typeName encoder type
-    * @return Definition of encoder
+    * @param namePrefix writes name prefix
+    * @param typeName   writes type
+    * @return Definition of writes
     */
-  private def playJsonWrites(namePrefix: String, typeName: String): Defn.Val = {
+  private def writes(namePrefix: String, typeName: String): Defn.Val = {
     val writesName = Pat.Var.Term(getWritesName(namePrefix))
     val writesType = Type.Name(typeName)
     q"implicit val $writesName: Writes[$writesType] = JsonNaming.snakecase(Json.writes[$writesType])"
   }
 
-  // TODO: get?
+  /**
+    * Produce `Writes` for entity with 22+ fields
+    *
+    * @param namePrefix writes name prefix
+    * @param typeName writes type
+    * @param fields entity fields
+    * @return Definition of writes
+    */
+  private def writes22Plus(namePrefix: String, typeName: String, fields: Seq[Field]): Defn.Val = {
+    val writesName = Pat.Var.Term(getWritesName(namePrefix))
+    val writesType = Type.Name(typeName)
+    val format     = format22Plus(namePrefix, typeName, fields)
+
+    q"implicit val $writesName: Writes[$writesType] = $format"
+  }
+
   private def getWritesName(namePrefix: String): Term.Name =
     Term.Name(s"${namePrefix}Writes")
 
   /**
-    * Produce circe `Decoder`
+    * make `Reads` for entity.
     *
-    * Name prefix should be lowerized
-    * Decoder type should be capitalized
+    * `Reads` in play-json handled specially for entities with more than 22 fields.
+    * For this case we generate special `Reads`.
     *
-    * @param namePrefix decoder name prefix
-    * @param typeName decoder type
-    * @return Definition of decoder
+    * @note
+    *       Name prefix should be lowerized
+    *       Type name  should be capitalized
+    *
+    * @param namePrefix reads name prefix
+    * @param typeName reads type
+    * @param fields entity fields
+    * @return definition of `Reads`
     */
-  private def playJsonReads(namePrefix: String, typeName: String): Defn.Val = {
-    val readsName = Pat.Var.Term(Term.Name(s"${namePrefix}Decoder"))
+  private def makeReads(namePrefix: String, typeName: String, fields: Seq[Field]): Defn.Val =
+    if (fields.length > 22) {
+      reads22Plus(
+        namePrefix = namePrefix,
+        typeName = typeName,
+        fields = fields
+      )
+    } else {
+      reads(
+        namePrefix = namePrefix,
+        typeName = typeName
+      )
+    }
+
+  /**
+    * Produce `Reads`
+    *
+    * @note
+    *       Name prefix should be lowerized
+    *       `Reads` type should be capitalized
+    *
+    * @param namePrefix reads name prefix
+    * @param typeName   reads type
+    * @return Definition of reads
+    */
+  private def reads(namePrefix: String, typeName: String): Defn.Val = {
+    val readsName = Pat.Var.Term(getReadsName(namePrefix))
     val readsType = Type.Name(typeName)
     q"implicit val $readsName: Reads[$readsType] = JsonNaming.snakecase(Json.reads[$readsType])"
+  }
+
+  /**
+    * Produce `Reads` for entity with 22+ fields
+    *
+    * @param namePrefix reads name prefix
+    * @param typeName reads type
+    * @param fields entity fields
+    * @return Definition of reads
+    */
+  private def reads22Plus(namePrefix: String, typeName: String, fields: Seq[Field]) = {
+    val readsName = Pat.Var.Term(getReadsName(namePrefix))
+    val readsType = Type.Name(typeName)
+    val format    = format22Plus(namePrefix, typeName, fields)
+
+    q"implicit val $readsName: Reads[$readsType] = $format"
+  }
+
+  private def getReadsName(namePrefix: String): Term.Name = Term.Name(s"${namePrefix}Reads")
+
+  /**
+    * Produce `Format` for entity with 22+ fields
+    * `Format` can act as both `Reads` and `Writes`
+    *
+    * @param namePrefix format name prefix
+    * @param typeName format type
+    * @param fields entity fields
+    * @return Definition of format
+    */
+  private def format22Plus(namePrefix: String, typeName: String, fields: Seq[Field]): Term.Block = {
+    def getGroupedFormatName(groupIndex: Int) =
+      Term.Name(s"${namePrefix}Format${groupIndex}")
+
+    // `groupedFieldNames` - names of entity fields
+    // `groupedFormats` - definition of format grouped by 21 fields.
+    val (groupedFieldNames, groupedFormats) = (fields.grouped(21).zipWithIndex map {
+      case (fieldsGroup, groupIndex) ⇒
+        val (fieldNames, groupTypes, fieldFormats) = (fieldsGroup map { field ⇒
+          val fieldName = field.name
+
+          field.typ match {
+            // maybe not the best approach. Should we work with schema's parsed type ???
+            case ot: OptionType ⇒
+              val fieldType = CodeGenerator.toScalaType(ot)
+              val innerType = CodeGenerator.toScalaType(ot.tp)
+              (
+                StringUtils.camelize(field.name),
+                fieldType,
+                q"(JsPath \ $fieldName).formatNullable[$innerType]"
+              )
+            case t ⇒
+              val scalaType = CodeGenerator.toScalaType(t)
+              (
+                StringUtils.camelize(field.name),
+                scalaType,
+                q"(JsPath \ $fieldName).format[$scalaType]"
+              )
+          }
+        }).unzip3
+
+        // TODO: move to common function
+        val groupedFormat = fieldFormats match {
+          case head +: tail ⇒
+            (tail foldLeft (head: Term)) { case (acc, el) ⇒ arg"${acc}.and(${el})" }
+          case Seq() ⇒
+            sys.error("Can't combine empty sequence of terms")
+        }
+
+        val groupedFormatName = Pat.Var.Term(getGroupedFormatName(groupIndex))
+
+        fieldNames → q"val $groupedFormatName: OFormat[( ..$groupTypes )] = ${groupedFormat}.tupled"
+    }).toVector.unzip
+
+    val entityFormat = {
+      val completeFormat = {
+        val formatNames = groupedFormats.zipWithIndex map {
+          case (_, i) ⇒ getGroupedFormatName(i)
+        }
+        // TODO: move to common function
+        formatNames match {
+          case head +: tail ⇒
+            (tail foldLeft (head: Term)) { case (acc, el) ⇒ q"${acc}.and($el)" }
+          case Seq() ⇒
+            sys.error("Can't combine empty sequence of terms")
+        }
+      }
+
+      val toEntityFunction = {
+        val cases = {
+          val tuples = groupedFieldNames map { names ⇒
+            val ns = names map { n ⇒
+              Pat.Var.Term(Term.Name(n))
+            }
+            p"( ..$ns )"
+          }
+
+          val constructCall = {
+            val args = groupedFieldNames.flatten map { fn ⇒
+              val fname = Term.Name(fn)
+              arg"$fname"
+            }
+            val tn = Ctor.Name(typeName)
+            ctor"$tn( ..$args )"
+          }
+
+          Vector(p"case ( .. $tuples) => $constructCall")
+        }
+
+        q"{ ..case $cases }"
+      }
+
+      val fromEntityFunction = {
+        val entityName = Term.Name(namePrefix)
+
+        val tupledFieldCalls = groupedFieldNames map { group ⇒
+          val fieldCalls = group map { fieldName ⇒
+            q"${entityName}.${Term.Name(fieldName)}"
+          }
+          q"( ..$fieldCalls )"
+        }
+
+        val entityParam = param"${entityName}:${Type.Name(typeName)}"
+
+        q"($entityParam) => ( ..$tupledFieldCalls )"
+      }
+
+      val formatApplication = q"${completeFormat}.apply($toEntityFunction, $fromEntityFunction)"
+      q"{ ..$groupedFormats;  $formatApplication }"
+    }
+    entityFormat
+  }
+
+  /**
+    * `Writes` for base type and it's cases
+    *
+    * @param baseType name of base type
+    * @param children sequence of child names
+    * @return Definition of writes for base class
+    */
+  private def baseWrites(baseType: String, children: Seq[String]): Defn.Val = {
+    val writesName = Pat.Var.Term(getWritesName(StringUtils.lowerize(baseType)))
+    val writesType = Type.Name(baseType.capitalize)
+
+    val cases = children map { childName ⇒
+      val cwName = arg"${getWritesName(StringUtils.lowerize(childName))}"
+      val cwType = Type.Name(childName.capitalize)
+      p"case x: $cwType => Json.toJson[$cwType](x)($cwName)"
+    }
+
+    q"""
+      implicit val $writesName: Writes[$writesType] = new Writes[$writesType] {
+        def writes(o: $writesType): JsValue = o match { ..case $cases }
+      }
+    """
   }
 
   // definition of ApiResponse reads
@@ -270,11 +446,12 @@ object PlayJsonGenerator extends TypeFunctions {
     """
 
   // definition of InputFile writes
-  private val InputFileWrites: Defn.Val = playJsonWrites("inputFile", "InputFile")
+  private val InputFileWrites: Defn.Val = writes("inputFile", "InputFile")
 
-  private val PlayJsonCommonImports: Import = {
+  private val CommonImports: Import = {
     val i = Seq(
       importer"_root_.play.api.libs.json._",
+      importer"_root_.play.api.libs.functional.syntax._",
       importer"_root_.com.github.tototoshi.play.json.JsonNaming"
     )
     q"import ..$i"

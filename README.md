@@ -12,7 +12,7 @@ $ sbt
 
 ## Developer notes
 * Json4s doesn't play nice with type aliases. they have issue for that. Okay...
-* Play Json can't generate macro reads/writes for case classes with 22+ fields. Issue: https://github.com/playframework/playframework/issues/3174 . Inspiration for workaround: https://gist.github.com/joprice/d9bad5ca2d2ef68fca73
+* Play Json can't generate macro reads/writes for case classes with 22+ fields. Issue: https://github.com/playframework/playframework/issues/3174 . Inspiration for workaround: https://gist.github.com/joprice/d9bad5ca2d2ef68fca73 (**Solved**)
 
 ## Todos
 - [X] Extract return type for methods

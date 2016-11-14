@@ -177,7 +177,8 @@ object CodeGenerator {
     * @param parsedType type from schema
     * @return scala.meta.Type
     */
-  private def toScalaType(parsedType: ParsedType): Type = {
+  // TODO: move it to common
+  def toScalaType(parsedType: ParsedType): Type = {
     def alias(pt: ParsedType): Option[Type] = pt match {
 //      case OrType(LiteralType("Integer" | "Int"), LiteralType("String")) ⇒ Some(t"ChatId")
       case _ ⇒ None

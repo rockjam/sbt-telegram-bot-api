@@ -20,7 +20,7 @@ import com.github.rockjam.telegram.bots.models.{ Decode, Encode }
 import play.api.libs.json.{ Json, Reads, Writes }
 
 package object playjson
-  extends EitherFormats
+    extends EitherFormats
     with StructuresWrites
     with MethodResponseReads
     with MethodsWrites {
