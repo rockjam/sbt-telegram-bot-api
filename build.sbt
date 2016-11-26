@@ -34,5 +34,10 @@ lazy val `play-json-kit` =
     .enablePlugins(AutomateHeaderPlugin, GitVersioning)
     .dependsOn(models)
 
+lazy val `micro-bench` =
+  project
+    .enablePlugins(AutomateHeaderPlugin, GitVersioning, JmhPlugin)
+    .dependsOn(`circe-kit`, `json4s-kit`, `play-json-kit`)
+
 initialCommands := """|import com.github.rockjam.telegram.bots._
                       |""".stripMargin
