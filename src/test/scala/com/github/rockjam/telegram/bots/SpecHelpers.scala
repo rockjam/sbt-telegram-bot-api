@@ -34,10 +34,10 @@ trait SpecHelpers { this: SpecBase ⇒ // todo: remove it
 
   def checkRequestResponse(req: BotApiRequest, resp: String)(
       checkRequest: io.circe.HCursor ⇒ Unit)(
-      implicit e: Encode[BotApiRequest],
-      m: Manifest[req.Resp], // can we use typetag only? it would be better
-      d: Decode[ApiResponse[req.Resp]],
-      tt: TypeTag[req.Resp]): ApiResponse[req.Resp] = {
+                            implicit e: Encode[BotApiRequest],
+                            m: Manifest[req.Resp], // can we use typetag only? it would be better
+                            d: Decode[BotApiResponse[req.Resp]],
+                            tt: TypeTag[req.Resp]): BotApiResponse[req.Resp] = {
     val json = toJson(req)
     println(s"==== json is: ${json}")
 
@@ -54,7 +54,7 @@ trait SpecHelpers { this: SpecBase ⇒ // todo: remove it
     println(s"=====tt 1: ${tt}")
     val response = fakeRequest(resp)
     println(s"response: ${response}")
-    fromJson[ApiResponse[req.Resp]](response)
+    fromJson[BotApiResponse[req.Resp]](response)
   }
 
   def fakeRequest(resp: String): String = {

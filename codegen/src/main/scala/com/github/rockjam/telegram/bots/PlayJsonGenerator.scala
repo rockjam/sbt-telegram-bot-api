@@ -33,9 +33,11 @@ object PlayJsonGenerator extends TypeFunctions {
 
     val pack = packageDef(basePackage)
     Map(
-      "StructuresWrites.scala"    → Seq(pack.syntax, sw.syntax),
-      "MethodsWrites.scala"       → Seq(pack.syntax, mw.syntax),
-      "MethodResponseReads.scala" → Seq(pack.syntax, mrr.syntax)
+      "StructuresWrites.scala" → Seq(pack.syntax, sw.syntax),
+      "MethodsWrites.scala" →
+        Seq(pack.syntax, SchemaCommon.BotApiRequestImport.syntax, mw.syntax),
+      "MethodResponseReads.scala" →
+        Seq(pack.syntax, SchemaCommon.BotApiResponseImport.syntax, mrr.syntax)
     )
   }
 
@@ -149,7 +151,7 @@ object PlayJsonGenerator extends TypeFunctions {
       }
     }
 
-    val stats: Seq[Stat] = Seq(modelsImport, CommonImports, ApiResponseReads) ++ reads
+    val stats: Seq[Stat] = Seq(modelsImport, CommonImports, BotApiResponseReads) ++ reads
     q"trait MethodResponseReads { ..$stats }"
   }
 
@@ -432,17 +434,17 @@ object PlayJsonGenerator extends TypeFunctions {
     """
   }
 
-  // definition of ApiResponse reads
-  private val ApiResponseReads: Defn.Def =
+  // definition of BotApiResponse reads
+  private val BotApiResponseReads: Defn.Def =
     q"""
-      implicit def apiResponseReads[T: Reads]: Reads[ApiResponse[T]] =
+      implicit def botApiResponseReads[T: Reads]: Reads[BotApiResponse[T]] =
         JsonNaming.snakecase(
           (
             (JsPath \ "ok").read[Boolean] and
             (JsPath \ "result").readNullable[T] and
             (JsPath \ "description").readNullable[String] and
             (JsPath \ "errorCode").readNullable[Int]
-          )(ApiResponse.apply(_, _: Option[T], _, _)))
+          )(BotApiResponse.apply(_, _: Option[T], _, _)))
     """
 
   // definition of InputFile writes

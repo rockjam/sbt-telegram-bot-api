@@ -31,7 +31,7 @@ object Main extends App {
     CodeGenerator.generate(modelsPackage, schema).mapValues(_.mkString("", "\n", "\n"))
   // should be scr_managed at compile time.
   writeFiles(
-    basePath = Paths.get("models/src/main/scala/com/github/rockjam/telegram/bots/models"),
+    basePath = Paths.get("tg-core/src/main/scala/com/github/rockjam/telegram/bots/models"),
     toWrite = entitiesTrees
   )
 
@@ -42,7 +42,7 @@ object Main extends App {
       .mapValues(_.mkString("", "\n", "\n"))
 
   writeFiles(
-    basePath = Paths.get("circe-kit/src/main/scala/com/github/rockjam/telegram/bots/circe"),
+    basePath = Paths.get("tg-circe/src/main/scala/com/github/rockjam/telegram/bots/circe"),
     toWrite = circeTrees
   )
 
@@ -53,7 +53,7 @@ object Main extends App {
       .mapValues(_.mkString("", "\n", "\n"))
 
   writeFiles(
-    basePath = Paths.get("play-json-kit/src/main/scala/com/github/rockjam/telegram/bots/playjson"),
+    basePath = Paths.get("tg-play-json/src/main/scala/com/github/rockjam/telegram/bots/playjson"),
     toWrite = playJsonTrees
   )
 

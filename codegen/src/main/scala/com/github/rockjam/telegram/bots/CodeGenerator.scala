@@ -41,7 +41,7 @@ object CodeGenerator {
     */
   def generate(basePackage: String, schema: Schema): Map[String, Seq[String]] = {
     val packageName = ScalametaCommon.packageDef(basePackage)
-    val packObject  = packageObject(basePackage)
+//    val packObject  = packageObject(basePackage)
 
     val traitTrees     = schema.baseTypes map baseTypeToTrait
     val structureTrees = schema.structs map structureToCaseClass
@@ -49,10 +49,10 @@ object CodeGenerator {
     val methodTrees = schema.methods map methodToCaseClass
 
     Map(
-      "package.scala" → packObject.map(_.syntax),
+//      "package.scala" → packObject.map(_.syntax),
       "structures.scala" → (Seq(packageName, InputFile) ++ traitTrees ++ structureTrees)
         .map(_.syntax),
-      "methods.scala" → (Seq(packageName, BotApiRequest) ++ methodTrees).map(_.syntax)
+      "methods.scala" → (Seq(packageName, BotApiRequestImport) ++ methodTrees).map(_.syntax)
     )
   }
 
@@ -115,15 +115,18 @@ object CodeGenerator {
 
   private val InputFile: Defn.Class = q"final case class InputFile(fileId: String)"
 
-  // base type for all bot API methods
-  private val BotApiRequest: Defn.Trait = {
-    val stats: Seq[Stat] = {
-      val resp    = q"type Resp"
-      val reqName = q"def requestName: String"
-      Seq(resp, reqName)
-    }
-    q"sealed trait BotApiRequest { ..$stats }"
-  }
+  private val BotApiRequestImport: Import =
+    q"import com.github.rockjam.telegram.bots.BotApiRequest"
+
+//  // base type for all bot API methods
+//  private val BotApiRequest: Defn.Trait = {
+//    val stats: Seq[Stat] = {
+//      val resp    = q"type Resp"
+//      val reqName = q"def requestName: String"
+//      Seq(resp, reqName)
+//    }
+//    q"sealed trait BotApiRequest { ..$stats }"
+//  }
 
   /**
     * Produce package name for given package
@@ -132,31 +135,30 @@ object CodeGenerator {
     * @param basePackage package name
     * @return package for object
     */
-  private def packageObject(basePackage: String) = {
-    // TODO: maybe ApiResponse should not be there
-    val stats = Seq(
-      q"type ChatId = Either[Long, String]",
-      q"""final case class ApiResponse[Resp](
-        ok: Boolean,
-        result: Option[Resp],
-        description: Option[String],
-        errorCode: Option[Int])
-      """
-    )
-
-    val (optPackage, packObjName) = (basePackage split "\\.").toList match {
-      case init :+ last   ⇒ Some(ScalametaCommon.packageDef(init mkString ".")) → last
-      case List() :+ last ⇒ None                                                → last
-    }
-
-    val packObj = {
-      val name  = Term.Name(packObjName)
-      val templ = template"{ ..$stats } "
-      q"package object $name extends $templ"
-    }
-
-    optPackage.fold(Seq[Stat](packObj))(p ⇒ Seq(p, packObj))
-  }
+//  private def packageObject(basePackage: String) = {
+//    val stats = Seq(
+//      q"type ChatId = Either[Long, String]",
+//      q"""final case class ApiResponse[Resp](
+//        ok: Boolean,
+//        result: Option[Resp],
+//        description: Option[String],
+//        errorCode: Option[Int])
+//      """
+//    )
+//
+//    val (optPackage, packObjName) = (basePackage split "\\.").toList match {
+//      case init :+ last   ⇒ Some(ScalametaCommon.packageDef(init mkString ".")) → last
+//      case List() :+ last ⇒ None                                                → last
+//    }
+//
+//    val packObj = {
+//      val name  = Term.Name(packObjName)
+//      val templ = template"{ ..$stats } "
+//      q"package object $name extends $templ"
+//    }
+//
+//    optPackage.fold(Seq[Stat](packObj))(p ⇒ Seq(p, packObj))
+//  }
 
   /**
     * Produces parameter that can be used in classes or methods.

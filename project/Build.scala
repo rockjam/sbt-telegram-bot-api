@@ -20,6 +20,7 @@ object Build extends AutoPlugin {
   override def projectSettings =
     reformatOnCompileSettings ++
     Vector(
+      version := "0.0.1-SNAPSHOT",
       // Core settings
       organization := "com.github.rockjam",
       licenses += ("Apache-2.0", url("http://www.apache.org/licenses/LICENSE-2.0")),

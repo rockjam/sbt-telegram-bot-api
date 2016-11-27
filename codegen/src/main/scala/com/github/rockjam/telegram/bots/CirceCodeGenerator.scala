@@ -47,9 +47,13 @@ object CirceCodeGenerator extends TypeFunctions {
 
     val pack = packageDef(basePackage)
     Map(
-      "StructuresEncoders.scala"     → Seq(pack.syntax, se.syntax),
-      "MethodsEncoders.scala"        → Seq(pack.syntax, me.syntax),
-      "MethodResponseDecoders.scala" → Seq(pack.syntax, mrd.syntax)
+      "StructuresEncoders.scala" → Seq(pack.syntax, se.syntax),
+      "MethodsEncoders.scala" → Seq(
+        pack.syntax,
+        SchemaCommon.BotApiRequestImport.syntax,
+        me.syntax),
+      "MethodResponseDecoders.scala" →
+        Seq(pack.syntax, SchemaCommon.BotApiResponseImport.syntax, mrd.syntax)
     )
   }
 
@@ -193,7 +197,7 @@ object CirceCodeGenerator extends TypeFunctions {
         modelsImport,
         CirceCommonImports,
         DerivationConfigDecl,
-        ApiResponseDecoder) ++ decoders
+        BotApiResponseDecoder) ++ decoders
     q"trait MethodResponseDecoders { ..$stats }"
 
   }
@@ -228,9 +232,9 @@ object CirceCodeGenerator extends TypeFunctions {
     q"implicit val $decoderName: Decoder[${Type.Name(decoderType)}] = deriveDecoder"
   }
 
-  // definition of ApiResponse decoder
-  private val ApiResponseDecoder: Defn.Def =
-    q"implicit def apiResponseDecoder[T: Decoder]: Decoder[ApiResponse[T]] = deriveDecoder"
+  // definition of BotApiResponse decoder
+  private val BotApiResponseDecoder: Defn.Def =
+    q"implicit def botApiResponseDecoder[T: Decoder]: Decoder[BotApiResponse[T]] = deriveDecoder"
 
   // definition of InputFile encoder
   private val InputFileEncoder: Defn.Val = circeEncoder("inputFile", "InputFile")

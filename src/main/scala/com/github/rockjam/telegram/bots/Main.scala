@@ -16,16 +16,15 @@
 
 package com.github.rockjam.telegram.bots
 
-import java.nio.file.StandardOpenOption.{ CREATE, TRUNCATE_EXISTING }
-import java.nio.file.{ Files, Paths }
+import akka.actor.ActorSystem
+import com.github.rockjam.telegram.bots.akkahttp.AkkaHttpClient
 
-import scala.collection.immutable.Seq
 import scala.reflect.runtime.universe._
 
 object Main extends App {
 
-  import com.github.rockjam.telegram.bots.models._
   import com.github.rockjam.telegram.bots.json4s._
+  import com.github.rockjam.telegram.bots.models._
 //  import com.github.rockjam.telegram.bots.circe._
 //  import io.circe.generic.extras.auto._ // TODO: this should GONE after we genereate semiauto encoders
   import JsonHelpers._
@@ -62,7 +61,7 @@ object Main extends App {
   val getFileThere = toJson(getFile)
   println(s"Get file there: ${getFileThere}")
 
-  def reqResp(req: BotApiRequest)(implicit tt: TypeTag[req.Resp]): ApiResponse[req.Resp] = {
+  def reqResp(req: BotApiRequest)(implicit tt: TypeTag[req.Resp]): BotApiResponse[req.Resp] = {
     val json = serializeRequest(req)
     println(s"json is: ${json}")
 
@@ -86,7 +85,7 @@ object Main extends App {
         User(1213L, "John", Some("Doe"), None)
     }
 
-    ApiResponse(
+    BotApiResponse(
       ok = true,
       result = Some(
         result.asInstanceOf[T]
@@ -95,5 +94,14 @@ object Main extends App {
       None
     )
   }
+
+  implicit val system = ActorSystem()
+  implicit val client = AkkaHttpClient()
+  import system.dispatcher
+
+  val resp = TelegramRequests.request(
+    GetMe(),
+    ""
+  )
 
 }

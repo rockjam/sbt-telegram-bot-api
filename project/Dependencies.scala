@@ -1,6 +1,7 @@
 import sbt._
 
 object Version {
+  final val AkkaHttp      = "10.0.0"
   final val Circe         = "0.6.0"
   final val Json4s        = "3.5.0"
   final val Jsoup         = "1.10.1"
@@ -12,6 +13,7 @@ object Version {
 }
 
 object Library {
+  val akkaHttp           = "com.typesafe.akka"    %% "akka-http"            % Version.AkkaHttp
   val circeCore          = "io.circe"             %% "circe-core"           % Version.Circe
   val circeGeneric       = "io.circe"             %% "circe-generic"        % Version.Circe
   val circeGenericExtras = "io.circe"             %% "circe-generic-extras" % Version.Circe
@@ -29,26 +31,20 @@ object Library {
 object Dependencies {
   import Library._
 
-  val circeKit = Vector(
+  val codegen = Vector(jsoup, scalameta)
+
+  val tgAkkaHttp = Vector(akkaHttp)
+
+  val tgCirce = Vector(
     circeCore,
     circeGeneric,
     circeGenericExtras,
     circeParser
   )
 
-  val codegen = Vector(
-    jsoup,
-    scalameta
-  )
+  val tgJson4s = Vector(json4s, json4sExt)
 
-  val json4sKit = Vector(
-    json4s,
-    json4sExt
-  )
-
-  val models = Vector(scalaReflect) // TODO: remove
-
-  val playJsonKit = Vector(playJson, playJsonNaming)
+  val tgPlayJson = Vector(playJson, playJsonNaming)
 
   val root = Vector(
     scalaReflect, // TODO: remove
