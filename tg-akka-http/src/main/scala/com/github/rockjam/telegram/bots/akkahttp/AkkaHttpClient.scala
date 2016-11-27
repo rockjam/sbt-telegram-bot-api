@@ -18,8 +18,9 @@ package com.github.rockjam.telegram.bots.akkahttp
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.Http
+import akka.http.scaladsl.model.ContentTypes.`application/json`
 import akka.http.scaladsl.model.HttpMethods.POST
-import akka.http.scaladsl.model.HttpRequest
+import akka.http.scaladsl.model.{ HttpEntity, HttpRequest }
 import akka.stream.{ ActorMaterializer, Materializer }
 import com.github.rockjam.telegram.bots.HttpClient
 
@@ -38,8 +39,11 @@ class AkkaHttpClient(system: ActorSystem) extends HttpClient {
   def makeRequest(uri: String, body: String): Future[String] =
     for {
       resp <- http.singleRequest(
-        HttpRequest(POST, uri, entity = body)
-      )
+        HttpRequest(
+          POST,
+          uri,
+          entity = HttpEntity(contentType = `application/json`, body)
+        ))
       respBody <- resp.entity.dataBytes.runFold("")(_ ++ _.utf8String)
     } yield respBody
 

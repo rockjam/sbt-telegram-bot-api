@@ -32,7 +32,7 @@ trait TelegramRequests extends JsonHelpers {
       ec: ExecutionContext
   ): Future[BotApiResponse[req.Resp]] = {
     val jsonReq = toJson(req)
-    val resp    = client.makeRequest(s"${TelegramApiUri}/bot${token}", jsonReq)
+    val resp    = client.makeRequest(s"${TelegramApiUri}/bot${token}/${req.requestName}", jsonReq)
     resp map (r ⇒ fromJson[BotApiResponse[req.Resp]](r))
   }
 
