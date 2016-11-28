@@ -18,13 +18,13 @@ package com.github.rockjam.telegram.bots
 
 import scala.concurrent.{ ExecutionContext, Future }
 
-object TelegramRequests extends TelegramRequests
-
 trait TelegramRequests extends JsonHelpers {
+
+  val botToken: String
 
   private val TelegramApiUri = s"https://api.telegram.org"
 
-  def request(req: BotApiRequest, token: String)(
+  def request(req: BotApiRequest)(
       implicit encode: Encode[BotApiRequest],
       manifest: Manifest[req.Resp],
       decode: Decode[BotApiResponse[req.Resp]],
@@ -32,7 +32,7 @@ trait TelegramRequests extends JsonHelpers {
       ec: ExecutionContext
   ): Future[BotApiResponse[req.Resp]] = {
     val jsonReq = toJson(req)
-    val resp    = client.makeRequest(s"${TelegramApiUri}/bot${token}/${req.requestName}", jsonReq)
+    val resp    = client.makeRequest(s"${TelegramApiUri}/bot${botToken}/${req.requestName}", jsonReq)
     resp map (r ⇒ fromJson[BotApiResponse[req.Resp]](r))
   }
 

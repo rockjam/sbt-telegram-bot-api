@@ -42,7 +42,7 @@ trait CallbackPolling extends TelegramRequests {
       ec: ExecutionContext
   ): Future[Unit] =
     for {
-      response <- request(req, botToken)
+      response <- request(req)
       _ = println(s"=== Updates ok: ${response.ok}")
       _ = println(s"=== Updates description: ${response.description}")
       _ = println(s"=== Updates errorCode: ${response.errorCode}")
@@ -64,8 +64,11 @@ trait CallbackPolling extends TelegramRequests {
       ec: ExecutionContext
   ): Unit =
     loop(InitialRequest)(handleUpdate) onComplete {
-      case Success(_)   ⇒ println("Successfully finished polling future")
-      case Failure(err) ⇒ println(s"Polling future failed with exception: ${err}")
+      case Success(_) ⇒ println("Successfully finished polling future")
+      case Failure(err) ⇒
+        println(s"Polling future failed with exception: ${err}")
+        loop(InitialRequest)(handleUpdate)
+        println("Restarted polling")
     }
 
   private def maxOffset(updates: Seq[Update]): Option[Long] =

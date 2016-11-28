@@ -54,3 +54,13 @@ lazy val noPublish = Seq(
   publishLocal := {},
   publishArtifact := false
 )
+
+addCommandAlias("compileAll", ";subproject/run; root/compile")
+
+// TODO: add this to run codegeneration before compilation
+//    .settings(
+//      compile in Compile := {
+//        (run in (codegen, Compile)).toTask("").value
+//        (compile in Compile).value
+//      }
+//    )

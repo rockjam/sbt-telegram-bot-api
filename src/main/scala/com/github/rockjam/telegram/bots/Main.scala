@@ -99,9 +99,8 @@ object Main extends App {
   implicit val client = AkkaHttpClient()
   import system.dispatcher
 
-  val resp = TelegramRequests.request(
-    GetMe(),
-    ""
-  )
+  val resp = (new TelegramRequests {
+    val botToken: String = ""
+  }).request(GetMe())
 
 }
