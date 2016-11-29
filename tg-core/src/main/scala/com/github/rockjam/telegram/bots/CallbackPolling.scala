@@ -25,8 +25,6 @@ import scala.util.{ Failure, Success }
 trait CallbackPolling extends TelegramRequests {
   type UpdateHandler = PartialFunction[Update, Future[Unit]]
 
-  val botToken: String
-
   protected lazy val pollingInterval: FiniteDuration = 10.seconds
 
   private val InitialRequest = GetUpdates(
