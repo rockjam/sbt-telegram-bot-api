@@ -333,7 +333,7 @@ object HTMLSchemaParser {
     * `ListType` encoded in text as "Array of {Type}"
     * `OrType` encoded in text as "...{First Type}..., otherwise ...{Second Type}...".
     *
-    * When no response type found in method description, we use defaul type: LiteralType("True")`
+    * When no response type found in method description, we use default type: `LiteralType("True")`
     *
     * @param elems DOM elements associated with given method
     * @param structNames names of all structures of Telegram bot API
@@ -363,7 +363,14 @@ object HTMLSchemaParser {
       val doc = Jsoup.parseBodyFragment(s)
 
       val literalType =
-        doc.body.select("em").asScala.map(_.text).headOption.map(LiteralType.apply)
+        doc.body
+          .select("em")
+          .asScala
+          .map(_.text)
+          .headOption
+          .map(LiteralType.apply)
+          .orElse(tryExtractLiteralType(doc.text)) // setWebhook broke it.
+
       val structType =
         doc.body.select("a").asScala.map(_.text).find(structNames.contains).map(StructType.apply)
 
@@ -381,6 +388,26 @@ object HTMLSchemaParser {
         else singleType
       }
     } getOrElse DefaultType
+  }
+
+  /**
+    * Try to extract literal type from raw text.
+    * @param rawText raw text to extact type from
+    * @return literal type, if present in `rawText`
+    */
+  def tryExtractLiteralType(rawText: String): Option[LiteralType] = {
+    val typesRelation = Map(
+      "Integer" → LiteralType("Long"),
+      "Int"     → LiteralType("Long"),
+      "Boolean" → LiteralType("Boolean"),
+      "True"    → LiteralType("Boolean"),
+      "String"  → LiteralType("String"),
+      "Float"   → LiteralType("Float")
+    )
+    (typesRelation flatMap {
+      case (k, v) ⇒
+        if (rawText.toLowerCase.contains(k.toLowerCase)) Some(v) else None
+    }).headOption
   }
 
   /**
