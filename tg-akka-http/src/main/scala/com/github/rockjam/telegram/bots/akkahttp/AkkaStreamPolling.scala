@@ -45,27 +45,27 @@ trait AkkaStreamPolling extends TelegramRequests {
       def createLogic(inheritedAttributes: Attributes): GraphStageLogic =
         new GraphStageLogic(shape) {
           private var buf: Vector[Update] = Vector.empty
-          private var currentOffset       = 0L
 
           setHandler(out, new OutHandler {
-            def onPull(): Unit =
-              if (buf.isEmpty) {
-                pollingRequest(currentOffset).onComplete(callback)
-              } else {
-                deliverBuf()
-              }
+            def onPull(): Unit = deliverBuf()
           })
 
-          private val callback: Try[BotApiResponse[Seq[Update]]] ⇒ Unit =
-            getAsyncCallback[Try[BotApiResponse[Seq[Update]]]] {
-              case Success(response) ⇒
+          override def preStart(): Unit =
+            pollingRequest(offset = 0L).onComplete(callback)
+
+          override def postStop(): Unit =
+            buf = null
+
+          private lazy val callback: Try[(BotApiResponse[Seq[Update]], Long)] ⇒ Unit =
+            getAsyncCallback[Try[(BotApiResponse[Seq[Update]], Long)]] {
+              case Success((response, lastOffset)) ⇒
                 if (response.ok) {
                   response.result match {
                     case Some(updates) ⇒
                       buf ++= updates
-                      updates.lastOption foreach { last ⇒
-                        currentOffset = last.updateId + 1
-                      }
+                      pollingRequest(
+                        offset = updates.lastOption.map(_.updateId + 1).getOrElse(lastOffset)
+                      ).onComplete(callback)
                       deliverBuf()
                     case None ⇒
                       fail(
@@ -84,20 +84,21 @@ trait AkkaStreamPolling extends TelegramRequests {
                 fail(out, err) // fail, or failStage?
             }.invoke(_)
 
-          private def deliverBuf(): Unit = {
-            val head +: tail = buf
-            buf = tail
-            push(out, head)
-          }
+          private def deliverBuf(): Unit =
+            if (buf.nonEmpty && isAvailable(out)) {
+              val head +: tail = buf
+              buf = tail
+              push(out, head)
+            }
 
-          private def pollingRequest(offset: Long): Future[BotApiResponse[Seq[Update]]] =
+          private def pollingRequest(offset: Long): Future[(BotApiResponse[Seq[Update]], Long)] =
             request(
               GetUpdates(
                 offset = Some(offset),
                 timeout = Some(pollingInterval.toSeconds),
                 limit = None,
                 allowedUpdates = None
-              ))
+              )) map (resp ⇒ resp → offset)
         }
     })
 
