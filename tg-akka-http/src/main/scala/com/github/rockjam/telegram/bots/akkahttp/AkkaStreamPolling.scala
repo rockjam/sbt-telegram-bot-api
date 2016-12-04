@@ -95,7 +95,8 @@ trait AkkaStreamPolling extends TelegramRequests {
               GetUpdates(
                 offset = Some(offset),
                 timeout = Some(pollingInterval.toSeconds),
-                limit = None
+                limit = None,
+                allowedUpdates = None
               ))
         }
     })

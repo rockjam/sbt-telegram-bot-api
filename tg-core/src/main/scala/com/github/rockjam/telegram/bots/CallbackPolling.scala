@@ -30,7 +30,8 @@ trait CallbackPolling extends TelegramRequests {
   private val InitialRequest = GetUpdates(
     offset = Some(0L),
     timeout = Some(pollingInterval.toSeconds),
-    limit = None
+    limit = None,
+    allowedUpdates = None
   )
 
   private def loop(req: GetUpdates)(handleUpdate: UpdateHandler)(
