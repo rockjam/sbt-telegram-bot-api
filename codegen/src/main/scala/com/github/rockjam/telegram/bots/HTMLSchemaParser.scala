@@ -285,7 +285,8 @@ object HTMLSchemaParser {
     (fieldsTable(elems) match {
       case ("Parameters" :: "Type" :: "Required" :: "Description" :: Nil) :: tail ⇒
         tail map {
-          case param :: typ :: required :: desc :: Nil if required == "Optional" ⇒
+          case param :: typ :: required :: desc :: Nil
+              if required == "Optional" || required == "No" ⇒
             Field(
               name = param,
               typ = extractType(typ, isOptional = true, structNames),
@@ -367,7 +368,7 @@ object HTMLSchemaParser {
           .select("em")
           .asScala
           .map(_.text)
-          .headOption
+          .lastOption
           .map(LiteralType.apply)
           .orElse(tryExtractLiteralType(doc.text)) // setWebhook broke it.
 
