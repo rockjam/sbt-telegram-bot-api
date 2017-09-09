@@ -77,7 +77,8 @@ trait AkkaStreamPolling extends TelegramRequests {
                   fail(
                     out,
                     new RuntimeException(
-                      s"Request failed with cause: ${response.description}, error code: ${response.errorCode}")
+                      s"Request failed with cause: ${response.description}, error code: ${response.errorCode}"
+                    )
                   )
                 }
               case Failure(err) ⇒
@@ -98,7 +99,8 @@ trait AkkaStreamPolling extends TelegramRequests {
                 timeout = Some(pollingInterval.toSeconds),
                 limit = None,
                 allowedUpdates = None
-              )) map (resp ⇒ resp → offset)
+              )
+            ) map (resp ⇒ resp → offset)
         }
     })
 

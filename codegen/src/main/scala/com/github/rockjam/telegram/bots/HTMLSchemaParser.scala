@@ -146,8 +146,9 @@ object HTMLSchemaParser {
     *         _2: Map from type that will be replaced to replacement type
     *         _3: Sequence of derived base types
     */
-  private def deriveTypesFromDeeplyNestedOrs(allFields: Seq[Field])
-    : (Map[String, BaseType], Map[ParsedType, ParsedType], Seq[BaseType]) = {
+  private def deriveTypesFromDeeplyNestedOrs(
+      allFields: Seq[Field]
+  ): (Map[String, BaseType], Map[ParsedType, ParsedType], Seq[BaseType]) = {
     val i = (allFields.groupBy(_.typ).toSeq collect {
       case (typ, fields) if orTypeDepth(typ) >= 3 && fields.length > 3 ⇒
         val isOptional = typ match {
@@ -244,9 +245,8 @@ object HTMLSchemaParser {
     * @param structNames names of all structures of Telegram bot API
     * @return sequence of structure's field descriptions
     */
-  private def extractStructFields(
-      elems: Seq[Element],
-      structNames: Seq[String]): scala.collection.immutable.Seq[Field] =
+  private def extractStructFields(elems: Seq[Element],
+                                  structNames: Seq[String]): scala.collection.immutable.Seq[Field] =
     (fieldsTable(elems) match {
       // first line of table is header we just match and omit
       case ("Field" :: "Type" :: "Description" :: Nil) :: tail ⇒
@@ -278,9 +278,8 @@ object HTMLSchemaParser {
     * @param structNames names of all structures of Telegram bot API
     * @return sequence of method's field descriptions
     */
-  private def extractMethodFields(
-      elems: Seq[Element],
-      structNames: Seq[String]): scala.collection.immutable.Seq[Field] =
+  private def extractMethodFields(elems: Seq[Element],
+                                  structNames: Seq[String]): scala.collection.immutable.Seq[Field] =
     // first line of table is header we just match and omit
     (fieldsTable(elems) match {
       case ("Parameters" :: "Type" :: "Required" :: "Description" :: Nil) :: tail ⇒
@@ -340,8 +339,7 @@ object HTMLSchemaParser {
     * @param structNames names of all structures of Telegram bot API
     * @return parsed response type
     */
-  private def extractMethodResponseType(elems: Seq[Element],
-                                        structNames: Seq[String]): ParsedType = {
+  private def extractMethodResponseType(elems: Seq[Element], structNames: Seq[String]): ParsedType = {
     val DefaultType = LiteralType("True")
 
     val paragraphs = new Elements(elems.asJava).select("p").asScala

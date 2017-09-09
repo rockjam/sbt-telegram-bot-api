@@ -51,7 +51,8 @@ object CirceCodeGenerator extends TypeFunctions {
       "MethodsEncoders.scala" → Seq(
         pack.syntax,
         SchemaCommon.BotApiRequestImport.syntax,
-        me.syntax),
+        me.syntax
+      ),
       "MethodResponseDecoders.scala" →
         Seq(pack.syntax, SchemaCommon.BotApiResponseImport.syntax, mrd.syntax)
     )
@@ -104,8 +105,8 @@ object CirceCodeGenerator extends TypeFunctions {
     }
 
     val stats: Seq[Stat] = Seq(modelsImport, CirceCommonImports, DerivationConfigDecl) ++
-        structureBaseEncoders ++
-        structEncoders
+      structureBaseEncoders ++
+      structEncoders
     q"trait StructuresEncoders { ..$stats }"
   }
 
@@ -150,11 +151,12 @@ object CirceCodeGenerator extends TypeFunctions {
     }
 
     val stats: Seq[Stat] = Seq(
-        modelsImport,
-        CirceCommonImports,
-        DerivationConfigDecl,
-        botApiRequestEncoder,
-        InputFileEncoder) ++ methsEncoders
+      modelsImport,
+      CirceCommonImports,
+      DerivationConfigDecl,
+      botApiRequestEncoder,
+      InputFileEncoder
+    ) ++ methsEncoders
     q"trait MethodsEncoders { ..$stats }"
   }
 
@@ -194,10 +196,11 @@ object CirceCodeGenerator extends TypeFunctions {
     }
 
     val stats: Seq[Stat] = Seq(
-        modelsImport,
-        CirceCommonImports,
-        DerivationConfigDecl,
-        BotApiResponseDecoder) ++ decoders
+      modelsImport,
+      CirceCommonImports,
+      DerivationConfigDecl,
+      BotApiResponseDecoder
+    ) ++ decoders
     q"trait MethodResponseDecoders { ..$stats }"
 
   }

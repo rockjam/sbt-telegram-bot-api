@@ -43,7 +43,8 @@ class AkkaHttpClient(system: ActorSystem) extends HttpClient {
           POST,
           uri,
           entity = HttpEntity(contentType = `application/json`, body)
-        ))
+        )
+      )
       respBody <- resp.entity.dataBytes.runFold("")(_ ++ _.utf8String)
     } yield respBody
 

@@ -75,8 +75,8 @@ object PlayJsonGenerator extends TypeFunctions {
     }
 
     val stats: Seq[Stat] = Seq(modelsImport, CommonImports, EmptyWrites) ++
-        structureBaseWrites ++
-        structWrites
+      structureBaseWrites ++
+      structWrites
     q"trait StructuresWrites { ..$stats }"
   }
 
@@ -106,11 +106,12 @@ object PlayJsonGenerator extends TypeFunctions {
     }
 
     val stats: Seq[Stat] = Seq(
-        modelsImport,
-        CommonImports,
-        EmptyWrites,
-        botApiRequestWrites,
-        InputFileWrites) ++ methWrites
+      modelsImport,
+      CommonImports,
+      EmptyWrites,
+      botApiRequestWrites,
+      InputFileWrites
+    ) ++ methWrites
     q"trait MethodsWrites { ..$stats }"
   }
 

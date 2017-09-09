@@ -29,7 +29,7 @@ object Main extends App {
 //  import io.circe.generic.extras.auto._ // TODO: this should GONE after we genereate semiauto encoders
   import JsonHelpers._
 
-  val user = User(123L, "John", Some("Doe"), None)
+  val user = User(123L, isBot = false, "John", Some("Doe"), None, None)
 
   val userThere = toJson(user)
   val userBack  = fromJson[User](userThere)
@@ -37,7 +37,7 @@ object Main extends App {
   println(s"User there: ${userThere}")
   println(s"User back: ${userBack}")
 
-  val kick = KickChatMember(Right("hellowo"), 21L)
+  val kick = KickChatMember(Right("hellowo"), 21L, None)
 
   val kickThere = toJson(kick)
   val kickBack  = fromJson[KickChatMember](kickThere)
@@ -82,7 +82,7 @@ object Main extends App {
       case t if t =:= typeOf[File] ⇒
         File("sss", Some(22L), Some("qweqew"))
       case t if t =:= typeOf[User] ⇒
-        User(1213L, "John", Some("Doe"), None)
+        User(1213L, isBot = false, "John", Some("Doe"), None, None)
     }
 
     BotApiResponse(
